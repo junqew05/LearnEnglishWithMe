@@ -142,6 +142,17 @@ input[type=range]{padding:0}
 .mission:last-child{border-bottom:none}
 .tick{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;margin-top:2px}
 .tick.on{background:var(--green);border-color:var(--green)}
+.imggrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:.5rem 0}
+@media(max-width:420px){.imggrid{grid-template-columns:1fr}}
+.imgcard{padding:6px;text-align:center;background:var(--card)}
+.imgcard.sel{border-color:var(--cobalt);background:var(--cobalt-soft)}
+.imgcard.right{border-color:var(--green);background:var(--green-soft)}
+.imgcard.wrong{border-color:var(--red);background:var(--red-soft)}
+.imgwrap{display:block}
+.imgwrap img{width:100%;height:132px;object-fit:cover;border-radius:8px;display:block}
+.imgfallback{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:132px;background:var(--bg2);border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:.85rem;color:var(--muted);text-align:center}
+.imglabel{display:block;margin-top:5px;font-weight:700;font-size:.85rem}
+.heroimg{width:100%;max-height:250px;object-fit:cover;border-radius:10px;display:block}
 </style>
 </head>
 <body>
@@ -165,17 +176,24 @@ input[type=range]{padding:0}
 
 <div class="wrap">
   <div class="notice" id="storageNotice">
-    <strong>⚠️ Giới hạn của bản HTML tĩnh — hãy đọc trước khi học:</strong>
-    Bản này chạy <strong>hoàn toàn trong trình duyệt của bạn</strong> và lưu tiến độ bằng <strong>localStorage của chính trình duyệt này</strong>.
-    Dữ liệu <strong>không đồng bộ lên máy chủ, không dùng Supabase</strong>: đổi trình duyệt, đổi thiết bị hoặc xóa dữ liệu trình duyệt là mất tiến độ.
-    Tài khoản ở đây chỉ là tài khoản cục bộ — <strong>đừng dùng mật khẩu thật</strong> của bạn. Hãy dùng nút “Xuất dữ liệu” trong mục Hồ sơ để sao lưu.
+    <strong>ℹ️ Cách tài khoản & tiến độ hoạt động — hãy đọc trước khi học:</strong>
+    <strong>Đăng nhập / đăng ký dùng Supabase Auth</strong>: tài khoản (email + mật khẩu) được lưu an toàn trên Supabase, đăng nhập được trên nhiều thiết bị.
+    <strong>Tiến độ học</strong> (XP, streak, bài đã hoàn thành, sổ từ vựng…) vẫn được giữ trong <strong>localStorage của trình duyệt này</strong> để bạn không bị mất khi chuyển sang đăng nhập Supabase;
+    khi đã đăng nhập, bài học hoàn thành còn được lưu thêm vào bảng <strong>progress</strong> trên Supabase (nếu dự án của bạn đã tạo bảng này).
+    Tiến độ cục bộ không tự đi theo sang trình duyệt/thiết bị khác — hãy dùng nút “Xuất dữ liệu” trong mục Hồ sơ để sao lưu định kỳ.
   </div>
 
   <!-- ============ AUTH ============ -->
   <section id="view-auth">
     <div class="authwrap">
       <h1>Học tiếng Anh từ A1 đến C2, luyện TOEIC mỗi ngày</h1>
-      <p class="muted">Đăng nhập bằng tài khoản cục bộ để tiếp tục lộ trình của bạn trên trình duyệt này, hoặc tạo tài khoản mới và làm bài kiểm tra đầu vào để được đề xuất cấp độ khởi điểm.</p>
+      <p class="muted">Đăng nhập bằng tài khoản Supabase để tiếp tục lộ trình của bạn, hoặc tạo tài khoản mới và làm bài kiểm tra đầu vào để được đề xuất cấp độ khởi điểm. Tiến độ học cũ trên trình duyệt này vẫn được giữ nguyên.</p>
+      <div class="notice red small hidden" id="sbKeyWarning">
+        <strong>Chưa dán Publishable key của Supabase.</strong> Mở file này bằng trình soạn thảo văn bản, bấm <span class="kbd">Ctrl+F</span> tìm
+        <strong>SUPABASE_PUBLISHABLE_KEY</strong> rồi thay <strong>PASTE_PUBLISHABLE_KEY_HERE</strong> bằng key publishable của bạn (bắt đầu bằng <strong>sb_publishable_</strong>, lấy trong Supabase: Settings → API Keys).
+        Tuyệt đối <strong>không</strong> dán Secret key / service_role key vào file này. Dán key xong hãy tải lại trang để đăng nhập / đăng ký bằng Supabase.
+        Tiến độ học cũ trên trình duyệt này vẫn được giữ nguyên và sẽ tự gắn với tài khoản Supabase của bạn khi bạn đăng nhập bằng đúng email đã dùng trước đây.
+      </div>
       <div class="card">
         <div class="tabrow">
           <button id="tabLogin" class="active">Đăng nhập</button>
@@ -183,14 +201,15 @@ input[type=range]{padding:0}
         </div>
         <form id="loginForm">
           <label>Email</label><input type="email" id="loginEmail" required placeholder="ban@example.com" />
-          <label>Mật khẩu (cục bộ — không dùng mật khẩu thật)</label><input type="password" id="loginPass" required />
+          <label>Mật khẩu</label><input type="password" id="loginPass" required />
           <p id="loginErr" class="small" style="color:var(--red)"></p>
+          <p id="loginOk" class="small" style="color:var(--green)"></p>
           <button class="btn-primary" style="width:100%;margin-top:10px">Đăng nhập</button>
         </form>
         <form id="regForm" class="hidden">
           <label>Họ tên</label><input id="regName" required placeholder="Nguyễn Văn A" />
           <label>Email</label><input type="email" id="regEmail" required placeholder="ban@example.com" />
-          <label>Mật khẩu (chỉ lưu trên trình duyệt này — không dùng mật khẩu thật)</label><input type="password" id="regPass" required minlength="4" />
+          <label>Mật khẩu (tối thiểu 6 ký tự — mật khẩu do Supabase quản lý)</label><input type="password" id="regPass" required minlength="6" />
           <label>Mục tiêu TOEIC (điểm tham khảo, không phải cam kết kết quả)</label>
           <select id="regGoal"><option>450</option><option>600</option><option selected>750</option><option>850</option><option>900+</option></select>
           <label>Thời gian học mỗi ngày</label>
@@ -198,7 +217,8 @@ input[type=range]{padding:0}
           <label>Kỹ năng ưu tiên</label>
           <select id="regPriority"><option value="listening">Listening — Nghe</option><option value="reading">Reading — Đọc</option><option value="writing">Writing — Viết</option><option value="speaking">Speaking — Nói</option></select>
           <p id="regErr" class="small" style="color:var(--red)"></p>
-          <button class="btn-primary" style="width:100%;margin-top:10px">Tạo tài khoản cục bộ</button>
+          <button class="btn-primary" style="width:100%;margin-top:10px">Đăng ký tài khoản</button>
+          <p class="small muted" style="margin-top:8px">Nếu dự án Supabase đang bật “Confirm email”, sau khi đăng ký bạn cần mở email và bấm liên kết xác nhận trước khi đăng nhập được.</p>
         </form>
       </div>
       <div class="notice blue small">
@@ -220,7 +240,8 @@ input[type=range]{padding:0}
 <script>
 "use strict";
 /* =====================================================================
-   LinguaHub — bản HTML tĩnh. Toàn bộ dữ liệu lưu ở localStorage trình duyệt.
+   LinguaHub — bản HTML tĩnh. Đăng nhập/đăng ký bằng Supabase Auth (khối script
+   cuối file); tiến độ học lưu ở localStorage trình duyệt theo từng email.
    Nội dung: mẫu nguyên bản, không phải đề thi ETS.
 ===================================================================== */
 const DB_KEY = "linguahub_static_v1";
@@ -713,6 +734,208 @@ LESSONS.push(
  err:{q:"Choose the corrected sentence:",options:["Taken together, the studies suggests caution.","Taken together, the studies suggest caution.","Taken together, the studies is suggest caution.","Taken together, the studies suggesting caution it."],answer:1,explain:"Chủ ngữ “studies” số nhiều → suggest."}}
 );
 
+/* ===== 6 BÀI HỌC MỚI CÓ NGHE–CHỌN HÌNH (mỗi cấp +1 bài, tổng 42 bài) =====
+   Mỗi bài: ảnh minh hoạ đầu bài, 5 từ vựng (IPA + nghĩa VI + ví dụ), ngữ pháp trọng tâm,
+   8 bài tập chấm điểm: 2 Nghe & chọn hình kiểu TOEIC Part 1 (TTS thật, chỉnh tốc độ,
+   transcript hiện sau khi chấm), 2 trắc nghiệm, 2 Điền từ, 2 Viết (điểm ước tính tham khảo).
+   Ảnh: đường link trực tiếp từ Unsplash (nguồn ảnh công khai), có alt EN + VI, tải lazy,
+   lỗi ảnh thì hiện khung thay thế có chữ mô tả. */
+const UIMG = "https://images.unsplash.com/";
+LESSONS.push(
+{id:"a1-7",level:"A1",skill:"listening",xp:20,title:"Things Around Me — Classroom and Home Objects",
+ objective:"Nhận biết và nói về các đồ vật quen thuộc trong lớp học và ở nhà; luyện nghe câu mô tả đơn giản rồi chọn đúng hình.",
+ img:{src:UIMG+"photo-1509062522246-3755977927d7?q=80&w=1000&auto=format&fit=crop",en:"Children learning in a bright classroom",vi:"Các em học sinh đang học trong một lớp học sáng sủa"},
+ vocab:[
+  {w:"desk",ipa:"/desk/",pos:"noun",vi:"bàn học, bàn làm việc",ex:"There is a notebook on the desk."},
+  {w:"chair",ipa:"/tʃeə/",pos:"noun",vi:"cái ghế",ex:"Please sit on this chair."},
+  {w:"lamp",ipa:"/læmp/",pos:"noun",vi:"đèn bàn, đèn chiếu sáng",ex:"The lamp is on the desk."},
+  {w:"notebook",ipa:"/ˈnəʊtbʊk/",pos:"noun",vi:"quyển vở",ex:"She writes in her notebook every day."},
+  {w:"clock",ipa:"/klɒk/",pos:"noun",vi:"đồng hồ treo tường / để bàn",ex:"The clock says nine o'clock."}],
+ grammar:{title:"This is / These are + plural nouns",body:"Một vật ở gần dùng “This is”: This is a desk. Nhiều vật dùng “These are”: These are chairs. Danh từ số nhiều thường thêm -s: book → books, lamp → lamps.",example:"This is my notebook, and these are my pens."},
+ quiz:[
+  {q:"This ____ a lamp.",options:["is","are","am","be"],answer:0,explain:"Một vật số ít dùng “This is”: This is a lamp."},
+  {q:"There are three ____ on the table.",options:["chair","chairs","chair-es","a chair"],answer:1,explain:"Số nhiều của “chair” là “chairs”."}],
+ fills:[
+  {q:"There is a ______ on the wall above the desk.",a:"clock",e:"Từ cần điền là “clock” (đồng hồ). Câu đầy đủ: There is a clock on the wall above the desk."},
+  {q:"Please put your notebook on the ______.",a:"desk",e:"Từ cần điền là “desk” (bàn học). Câu đầy đủ: Please put your notebook on the desk."}],
+ writings:[
+  {prompt:"Write 3–4 sentences about your desk or your room. Name at least three objects and say where they are. You can start: “This is my desk. There is a lamp on it…”",min:25},
+  {prompt:"Write 3–4 sentences about your school bag: what is in it today? Use “I have got…” or “There is / There are…”.",min:25}],
+ imgListen:[
+  {script:"A person is writing in a notebook with a pen.",answer:0,explain:"Câu mô tả: “A person is writing in a notebook with a pen.” — một người đang viết vào quyển vở bằng bút.",
+   images:[
+    {src:UIMG+"photo-1455390582262-044cdead277a?q=80&w=700&auto=format&fit=crop",en:"A hand writing with a pen on paper",vi:"Một bàn tay đang viết bằng bút lên giấy"},
+    {src:UIMG+"photo-1496181133206-80ce9b88a853?q=80&w=700&auto=format&fit=crop",en:"A laptop computer on a desk",vi:"Một chiếc máy tính xách tay trên bàn"},
+    {src:UIMG+"photo-1509042239860-f550ce710b93?q=80&w=700&auto=format&fit=crop",en:"A cup of coffee with latte art",vi:"Một tách cà phê có hình vẽ trên mặt"},
+    {src:UIMG+"photo-1512820790803-83ca734da794?q=80&w=700&auto=format&fit=crop",en:"An open book on a table",vi:"Một cuốn sách đang mở trên bàn"}]},
+  {script:"A cat is resting on the sofa in the living room.",answer:1,explain:"Câu mô tả nhắc tới “a cat” — con mèo đang nằm nghỉ; các hình còn lại là chó, phòng khách trống và giường ngủ.",
+   images:[
+    {src:UIMG+"photo-1543466835-00a7907e9de1?q=80&w=700&auto=format&fit=crop",en:"A happy dog smiling at the camera",vi:"Một chú chó vui vẻ đang nhìn vào ống kính"},
+    {src:UIMG+"photo-1514888286974-6c03e2ca1dba?q=80&w=700&auto=format&fit=crop",en:"A tabby cat resting indoors",vi:"Một con mèo mướp đang nằm nghỉ trong nhà"},
+    {src:UIMG+"photo-1522708323590-d24dbb6b0267?q=80&w=700&auto=format&fit=crop",en:"A living room with a sofa and a table",vi:"Một phòng khách có ghế sofa và bàn"},
+    {src:UIMG+"photo-1505693416388-ac5ce068fe85?q=80&w=700&auto=format&fit=crop",en:"A bed in a bedroom",vi:"Một chiếc giường trong phòng ngủ"}]}]},
+{id:"a2-7",level:"A2",skill:"listening",xp:25,title:"A Day Out — Shopping, Food and the Weather",
+ objective:"Nói về một ngày đi chơi đời thường: mua sắm ở chợ và cửa hàng, món ăn và thời tiết; dùng quá khứ đơn cho việc đã qua.",
+ img:{src:UIMG+"photo-1488459716781-31db52582fe9?q=80&w=1000&auto=format&fit=crop",en:"Fresh vegetables at a market stall",vi:"Rau củ tươi tại một quầy hàng ở chợ"},
+ vocab:[
+  {w:"market",ipa:"/ˈmɑːkɪt/",pos:"noun",vi:"chợ",ex:"We buy vegetables at the market."},
+  {w:"fresh",ipa:"/freʃ/",pos:"adjective",vi:"tươi",ex:"The fish at this market is very fresh."},
+  {w:"umbrella",ipa:"/ʌmˈbrelə/",pos:"noun",vi:"cái ô, cây dù",ex:"Take an umbrella — it is raining."},
+  {w:"cloudy",ipa:"/ˈklaʊdi/",pos:"adjective",vi:"nhiều mây",ex:"It was cloudy in the morning."},
+  {w:"change",ipa:"/tʃeɪndʒ/",pos:"noun",vi:"tiền lẻ, tiền thối lại",ex:"Here is your change — two dollars."}],
+ grammar:{title:"Past simple with was / were and regular verbs",body:"Việc đã qua dùng quá khứ đơn: We visited the market. Thời tiết và trạng thái dùng was/were: It was cloudy. They were happy.",example:"Yesterday we went to the market. It was cloudy, but the vegetables were fresh and cheap."},
+ quiz:[
+  {q:"Yesterday, we ____ to the market by bus.",options:["go","went","goes","going to now"],answer:1,explain:"“Yesterday” là dấu hiệu quá khứ đơn: went (go → went)."},
+  {q:"The weather ____ sunny yesterday.",options:["was","were","are","be"],answer:0,explain:"“The weather” là chủ ngữ số ít nên dùng “was”."}],
+ fills:[
+  {q:"She bought some ______ vegetables at the market.",a:"fresh",e:"Từ cần điền là “fresh” (tươi). Câu đầy đủ: She bought some fresh vegetables at the market."},
+  {q:"It rained all day, so I took my ______ to school.",a:"umbrella",e:"Từ cần điền là “umbrella” (cái ô). Câu đầy đủ: …so I took my umbrella to school."}],
+ writings:[
+  {prompt:"Write a short paragraph (about 40–50 words) about a shopping trip you remember: where you went, what you bought, and how much it cost.",min:40},
+  {prompt:"Write 4–5 sentences about the weather today: describe the morning and the afternoon, and say what clothes you are wearing.",min:40}],
+ imgListen:[
+  {script:"People are buying fresh vegetables at the market.",answer:0,explain:"Câu mô tả: “People are buying fresh vegetables at the market.” — mọi người đang mua rau tươi ở chợ/cửa hàng thực phẩm.",
+   images:[
+    {src:UIMG+"photo-1542838132-92c53300491e?q=80&w=700&auto=format&fit=crop",en:"Fresh produce in a grocery store",vi:"Rau củ quả tươi trong một cửa hàng thực phẩm"},
+    {src:UIMG+"photo-1445116572660-236099ec97a0?q=80&w=700&auto=format&fit=crop",en:"People sitting inside a café",vi:"Mọi người đang ngồi trong một quán cà phê"},
+    {src:UIMG+"photo-1441986300917-64674bd600d8?q=80&w=700&auto=format&fit=crop",en:"Clothes for sale in a clothing store",vi:"Quần áo đang bày bán trong cửa hàng thời trang"},
+    {src:UIMG+"photo-1517248135467-4c7edcad34c4?q=80&w=700&auto=format&fit=crop",en:"Empty tables inside a restaurant",vi:"Bàn ghế trống bên trong một nhà hàng"}]},
+  {script:"The red shoe is in the shop window.",answer:2,explain:"Câu mô tả: “The red shoe is in the shop window.” — chiếc giày đỏ ở tủ kính cửa hàng; các hình còn lại là áo thun, tô salad và kệ sách.",
+   images:[
+    {src:UIMG+"photo-1523381210434-271e8be1f52b?q=80&w=700&auto=format&fit=crop",en:"T-shirts hanging in a shop",vi:"Những chiếc áo thun treo trong cửa hàng"},
+    {src:UIMG+"photo-1546069901-ba9599a7e63c?q=80&w=700&auto=format&fit=crop",en:"A bowl of fresh salad",vi:"Một tô salad tươi"},
+    {src:UIMG+"photo-1542291026-7eec264c27ff?q=80&w=700&auto=format&fit=crop",en:"A red sports shoe",vi:"Một chiếc giày thể thao màu đỏ"},
+    {src:UIMG+"photo-1481627834876-b7833e8f5570?q=80&w=700&auto=format&fit=crop",en:"Shelves of books in a library",vi:"Các kệ sách trong thư viện"}]}]},
+{id:"b1-7",level:"B1",skill:"listening",xp:30,title:"Travel Smart — At the Airport and the Hotel",
+ objective:"Xử lý các tình huống khi đi công tác và du lịch: làm thủ tục ở sân bay, tìm cổng lên máy bay và nhận phòng khách sạn.",
+ img:{src:UIMG+"photo-1488646953014-85cb44e25828?q=80&w=1000&auto=format&fit=crop",en:"A traveller looking at a map at an airport",vi:"Một du khách đang xem bản đồ tại sân bay"},
+ vocab:[
+  {w:"check in",ipa:"/tʃek ɪn/",pos:"phrasal verb",vi:"làm thủ tục (lên máy bay / nhận phòng)",ex:"We need to check in two hours before the flight."},
+  {w:"departure",ipa:"/dɪˈpɑːtʃə/",pos:"noun",vi:"sự khởi hành; khu vực đi",ex:"The departure gate opens at nine."},
+  {w:"gate",ipa:"/ɡeɪt/",pos:"noun",vi:"cổng lên máy bay",ex:"Our plane leaves from gate twelve."},
+  {w:"reservation",ipa:"/ˌrezəˈveɪʃn/",pos:"noun",vi:"việc đặt trước (phòng, bàn)",ex:"I have a reservation under the name Tran."},
+  {w:"reception",ipa:"/rɪˈsepʃn/",pos:"noun",vi:"quầy lễ tân",ex:"Please ask at reception for your room key."}],
+ grammar:{title:"Present continuous for future arrangements + have to",body:"Kế hoạch đã sắp xếp chắc chắn dùng hiện tại tiếp diễn: We are flying at 7 a.m. Nghĩa vụ, quy định dùng have to: You have to show your passport.",example:"We are leaving at dawn, so we have to check in online tonight."},
+ quiz:[
+  {q:"We ____ to Da Lat at seven tomorrow morning. The tickets are already booked.",options:["are flying","fly yesterday","flies now","flew tomorrow"],answer:0,explain:"Kế hoạch tương lai đã sắp xếp dùng hiện tại tiếp diễn: are flying."},
+  {q:"You ____ show your passport at check-in.",options:["have to","has to yesterday","having to","to have now"],answer:0,explain:"Nghĩa vụ với chủ ngữ “you” dùng “have to + động từ nguyên mẫu”."}],
+ fills:[
+  {q:"Our plane leaves from ______ fourteen, so let's walk there now.",a:"gate",e:"Từ cần điền là “gate” (cổng lên máy bay). Câu đầy đủ: Our plane leaves from gate fourteen…"},
+  {q:"I have a ______ for a double room under the name Le.",a:"reservation",e:"Từ cần điền là “reservation” (việc đặt phòng trước)."}],
+ writings:[
+  {prompt:"Write an email (about 60–80 words) to a hotel: ask to change your booking from Friday to Saturday, and ask whether breakfast is included.",min:60},
+  {prompt:"Write a paragraph (about 60–80 words) about a journey you remember well: where you went, how you travelled, and one problem that happened on the way.",min:60}],
+ imgListen:[
+  {script:"Passengers are waiting at the departure gate in the airport.",answer:0,explain:"Câu mô tả: “Passengers are waiting at the departure gate in the airport.” — hành khách đang chờ ở cổng khởi hành trong sân bay.",
+   images:[
+    {src:UIMG+"photo-1569154941061-e231b4725ef1?q=80&w=700&auto=format&fit=crop",en:"Passengers waiting in an airport terminal",vi:"Hành khách đang chờ trong nhà ga sân bay"},
+    {src:UIMG+"photo-1474487548417-781cb71495f3?q=80&w=700&auto=format&fit=crop",en:"A train arriving at a station platform",vi:"Một đoàn tàu đang vào sân ga"},
+    {src:UIMG+"photo-1564501049412-61c2a3083791?q=80&w=700&auto=format&fit=crop",en:"A hotel building with a swimming pool",vi:"Một khách sạn có hồ bơi"},
+    {src:UIMG+"photo-1503376780353-7e6692767b70?q=80&w=700&auto=format&fit=crop",en:"A red sports car on the road",vi:"Một chiếc ô tô thể thao màu đỏ trên đường"}]},
+  {script:"The wing of the plane is above the clouds at sunset.",answer:1,explain:"Câu mô tả: “The wing of the plane is above the clouds at sunset.” — cánh máy bay phía trên những đám mây lúc hoàng hôn.",
+   images:[
+    {src:UIMG+"photo-1544620347-c4fd4a3d5957?q=80&w=700&auto=format&fit=crop",en:"A bus travelling on a road",vi:"Một chiếc xe buýt đang chạy trên đường"},
+    {src:UIMG+"photo-1436491865332-7a61a109cc05?q=80&w=700&auto=format&fit=crop",en:"An aeroplane wing above the clouds",vi:"Cánh máy bay phía trên những đám mây"},
+    {src:UIMG+"photo-1551882547-ff40c63fe5c4?q=80&w=700&auto=format&fit=crop",en:"A resort hotel with palm trees and a pool",vi:"Một khách sạn nghỉ dưỡng có cây cọ và hồ bơi"},
+    {src:UIMG+"photo-1449965408869-eaa3f722e40d?q=80&w=700&auto=format&fit=crop",en:"A person driving a car",vi:"Một người đang lái ô tô"}]}]},
+{id:"b2-7",level:"B2",skill:"listening",xp:35,title:"Workplace Trends — Meetings, Teams and Remote Work",
+ objective:"Thảo luận về xu hướng làm việc hiện đại trong công ty: họp nhóm, cộng tác, phản hồi và làm việc từ xa.",
+ img:{src:UIMG+"photo-1497366811353-6870744d04b2?q=80&w=1000&auto=format&fit=crop",en:"A modern office lounge with sofas",vi:"Khu vực thư giãn trong một văn phòng hiện đại"},
+ vocab:[
+  {w:"collaborate",ipa:"/kəˈlæbəreɪt/",pos:"verb",vi:"cộng tác, hợp tác làm việc",ex:"The two teams collaborate on the new product."},
+  {w:"feedback",ipa:"/ˈfiːdbæk/",pos:"noun",vi:"phản hồi, ý kiến đóng góp",ex:"My manager gave me useful feedback."},
+  {w:"schedule",ipa:"/ˈʃedjuːl/",pos:"noun/verb",vi:"lịch trình; lên lịch",ex:"Let's schedule the meeting for Monday."},
+  {w:"remote",ipa:"/rɪˈməʊt/",pos:"adjective",vi:"từ xa (làm việc remote)",ex:"Many staff now work remote two days a week."},
+  {w:"department",ipa:"/dɪˈpɑːtmənt/",pos:"noun",vi:"phòng ban",ex:"The marketing department has ten people."}],
+ grammar:{title:"First conditional in planning + will vs be going to",body:"Kế hoạch có điều kiện dùng điều kiện loại 1: If the client agrees, we will start in June. “Will” cho quyết định/hứa hẹn tại lúc nói; “be going to” cho dự định đã hình thành.",example:"If sales rise this quarter, the company will hire more staff for the support department."},
+ quiz:[
+  {q:"If the client ____ the plan, we will sign the contract tomorrow.",options:["approves","will approve","approved it yesterday now","approve is"],answer:0,explain:"Điều kiện loại 1: mệnh đề if dùng hiện tại đơn — approves."},
+  {q:"“To work remote” means:",options:["to work in a very far office building","to work from home or away from the main office","to work only at night","to work without a computer"],answer:1,explain:"Remote work = làm việc từ xa, không cần có mặt ở văn phòng."}],
+ fills:[
+  {q:"Our manager always gives honest ______ after a presentation.",a:"feedback",e:"Từ cần điền là “feedback” (phản hồi)."},
+  {q:"Let's ______ the meeting for ten o'clock on Monday.",a:"schedule",e:"Từ cần điền là “schedule” (lên lịch)."}],
+ writings:[
+  {prompt:"Write a paragraph (about 80–100 words) about the advantages and disadvantages of working from home for office staff. Give at least one example.",min:80},
+  {prompt:"Write a short email (about 70–90 words) to your team: the Friday meeting moves to Monday at 10 a.m. Explain why, and say what everyone should prepare.",min:70}],
+ imgListen:[
+  {script:"Several colleagues are working together around a table with laptops.",answer:0,explain:"Câu mô tả: “Several colleagues are working together around a table with laptops.” — nhiều đồng nghiệp đang làm việc cùng nhau quanh một chiếc bàn có máy tính.",
+   images:[
+    {src:UIMG+"photo-1522071820081-009f0129c71c?q=80&w=700&auto=format&fit=crop",en:"Colleagues working together at a table",vi:"Các đồng nghiệp đang làm việc cùng nhau tại bàn"},
+    {src:UIMG+"photo-1497366216548-37526070297c?q=80&w=700&auto=format&fit=crop",en:"An empty modern office",vi:"Một văn phòng hiện đại đang trống người"},
+    {src:UIMG+"photo-1540575467063-178a50c2df87?q=80&w=700&auto=format&fit=crop",en:"A large audience at a conference",vi:"Đông đảo khán giả tại một hội nghị lớn"},
+    {src:UIMG+"photo-1460925895917-afdab827c52f?q=80&w=700&auto=format&fit=crop",en:"A laptop showing charts and graphs",vi:"Một máy tính xách tay hiển thị biểu đồ"}]},
+  {script:"A woman is giving a presentation in front of a large screen.",answer:2,explain:"Câu mô tả: “A woman is giving a presentation in front of a large screen.” — một phụ nữ đang thuyết trình trước màn hình lớn trên sân khấu.",
+   images:[
+    {src:UIMG+"photo-1552664730-d307ca884978?q=80&w=700&auto=format&fit=crop",en:"A team putting sticky notes on a board",vi:"Một nhóm đang dán giấy ghi chú lên bảng"},
+    {src:UIMG+"photo-1521791136064-7986c2920216?q=80&w=700&auto=format&fit=crop",en:"Two business people shaking hands",vi:"Hai doanh nhân đang bắt tay"},
+    {src:UIMG+"photo-1475721027785-f74eccf877e2?q=80&w=700&auto=format&fit=crop",en:"A speaker presenting on a conference stage",vi:"Một diễn giả đang thuyết trình trên sân khấu hội nghị"},
+    {src:UIMG+"photo-1454165804606-c3d57bc86b40?q=80&w=700&auto=format&fit=crop",en:"Business documents and a laptop on a desk",vi:"Tài liệu kinh doanh và máy tính trên bàn làm việc"}]}]},
+{id:"c1-7",level:"C1",skill:"listening",xp:40,title:"Arguing a Point — Media, Panels and Public Debate",
+ objective:"Phân tích tranh luận công khai và báo chí: nhận diện thiên kiến, đánh giá độ tin cậy của nguồn và viết phản bác có dẫn chứng.",
+ img:{src:UIMG+"photo-1504711434969-e33886168f5c?q=80&w=1000&auto=format&fit=crop",en:"A stack of daily newspapers",vi:"Một chồng báo giấy hằng ngày"},
+ vocab:[
+  {w:"bias",ipa:"/ˈbaɪəs/",pos:"noun",vi:"thiên kiến, sự thiên vị",ex:"Readers noticed a clear bias in the report."},
+  {w:"credibility",ipa:"/ˌkredəˈbɪləti/",pos:"noun",vi:"độ tin cậy, uy tín",ex:"Anonymous sources weaken a story's credibility."},
+  {w:"headline",ipa:"/ˈhedlaɪn/",pos:"noun",vi:"tiêu đề báo chí",ex:"The headline did not match the article."},
+  {w:"panel",ipa:"/ˈpænl/",pos:"noun",vi:"nhóm chuyên gia thảo luận",ex:"A panel of economists debated the policy."},
+  {w:"rebuttal",ipa:"/rɪˈbʌtl/",pos:"noun",vi:"lời phản bác",ex:"Her rebuttal answered each point in turn."}],
+ grammar:{title:"Reporting verbs and stance in debate",body:"Động từ tường thuật thể hiện thái độ của người viết: claim (tuyên bố, chưa kiểm chứng), contend (luận giải rằng), concede (thừa nhận một phần), refute (bác bỏ bằng chứng). Chọn đúng động từ giúp người đọc biết ý được dẫn đáng tin tới mức nào.",example:"The minister claimed the policy was working, but economists contended that the data told a different story."},
+ quiz:[
+  {q:"To “concede a point” in a debate means to:",options:["repeat the point more loudly","accept that the other side's point is valid","leave the debate early","change the subject completely"],answer:1,explain:"Concede = thừa nhận ý của phía đối lập là có lý (ít nhất một phần)."},
+  {q:"Which verb introduces a claim that still needs checking?",options:["proves","claims","demonstrates conclusively","confirms beyond doubt"],answer:1,explain:"“Claims” chỉ một tuyên bố chưa được kiểm chứng, nên cần thận trọng."}],
+ fills:[
+  {q:"Before trusting a source, careful readers question its ______.",a:"credibility",e:"Từ cần điền là “credibility” (độ tin cậy)."},
+  {q:"The ______ was dramatic, but the article itself was cautious and balanced.",a:"headline",e:"Từ cần điền là “headline” (tiêu đề báo)."}],
+ writings:[
+  {prompt:"Write an argumentative paragraph (about 100–120 words): “Social media has improved public debate.” Argue one side, concede one point to the other side, and answer that point.",min:100},
+  {prompt:"Write a rebuttal paragraph (about 90–110 words) answering this claim: “Newspapers are no longer needed because everyone gets news online.” Use at least two reporting verbs (claim, contend, concede, refute…).",min:90}],
+ imgListen:[
+  {script:"A panel of experts is debating on a stage in front of a large audience.",answer:0,explain:"Câu mô tả: “A panel of experts is debating on a stage in front of a large audience.” — nhóm chuyên gia tranh luận trên sân khấu trước đông khán giả tại hội nghị.",
+   images:[
+    {src:UIMG+"photo-1540575467063-178a50c2df87?q=80&w=700&auto=format&fit=crop",en:"A large audience watching a conference stage",vi:"Đông khán giả đang xem sân khấu hội nghị"},
+    {src:UIMG+"photo-1478737270239-2f02b77fc618?q=80&w=700&auto=format&fit=crop",en:"A microphone in a radio studio",vi:"Một chiếc micro trong phòng thu radio"},
+    {src:UIMG+"photo-1519389950473-47ba0277781c?q=80&w=700&auto=format&fit=crop",en:"A team working at a table with laptops",vi:"Một nhóm đang làm việc tại bàn với máy tính xách tay"},
+    {src:UIMG+"photo-1507842217343-583bb7270b66?q=80&w=700&auto=format&fit=crop",en:"A grand old library hall",vi:"Một sảnh thư viện cổ kính, tráng lệ"}]},
+  {script:"Someone is reading a newspaper over a cup of coffee.",answer:1,explain:"Câu mô tả: “Someone is reading a newspaper over a cup of coffee.” — ai đó đang đọc báo bên một tách cà phê.",
+   images:[
+    {src:UIMG+"photo-1511671782779-c97d3d27a1d4?q=80&w=700&auto=format&fit=crop",en:"A microphone on a stand",vi:"Một chiếc micro trên giá đỡ"},
+    {src:UIMG+"photo-1495020689067-958852a7765e?q=80&w=700&auto=format&fit=crop",en:"A newspaper and a cup of coffee on a table",vi:"Một tờ báo và một tách cà phê trên bàn"},
+    {src:UIMG+"photo-1551288049-bebda4e38f71?q=80&w=700&auto=format&fit=crop",en:"Business graphs on a computer screen",vi:"Các biểu đồ kinh doanh trên màn hình máy tính"},
+    {src:UIMG+"photo-1481627834876-b7833e8f5570?q=80&w=700&auto=format&fit=crop",en:"Tall bookshelves in a library",vi:"Các kệ sách cao trong thư viện"}]}]},
+{id:"c2-7",level:"C2",skill:"listening",xp:45,title:"Abstract Ideas — Time, Technology and Society",
+ objective:"Thảo luận các ý tưởng trừu tượng và phức tạp: nghịch lý của lựa chọn, nhận thức về thời gian và tác động sâu rộng của công nghệ.",
+ img:{src:UIMG+"photo-1419242902214-272b3f66ee7a?q=80&w=1000&auto=format&fit=crop",en:"The Milky Way in a dark night sky",vi:"Dải Ngân Hà trên bầu trời đêm tối"},
+ vocab:[
+  {w:"paradox",ipa:"/ˈpærədɒks/",pos:"noun",vi:"nghịch lý",ex:"It is a paradox: more choice can mean less freedom."},
+  {w:"ambiguity",ipa:"/ˌæmbɪˈɡjuːəti/",pos:"noun",vi:"sự mơ hồ, đa nghĩa",ex:"The contract's ambiguity caused a dispute."},
+  {w:"inevitable",ipa:"/ɪnˈevɪtəbl/",pos:"adjective",vi:"tất yếu, không thể tránh khỏi",ex:"Change is inevitable; stagnation is a choice."},
+  {w:"perception",ipa:"/pəˈsepʃn/",pos:"noun",vi:"nhận thức, cách cảm nhận",ex:"Screens alter our perception of time."},
+  {w:"profound",ipa:"/prəˈfaʊnd/",pos:"adjective",vi:"sâu sắc, sâu rộng",ex:"The invention had a profound effect on society."}],
+ grammar:{title:"Fronting and inversion for emphasis in abstract argument",body:"Đưa yếu tố lên đầu câu để nhấn mạnh: “What matters is not speed but direction.” Đảo ngữ sau trạng từ hạn chế: “Rarely has a technology changed daily life so quietly.” Hai kỹ thuật này rất phổ biến trong diễn ngôn học thuật nâng cao.",example:"What the data cannot tell us is why people choose as they do — and it is precisely there that the argument becomes interesting."},
+ quiz:[
+  {q:"Choose the correct inversion:",options:["Rarely we have seen such change.","Rarely have we seen such change.","Rarely we seen have such change.","Have rarely we seen such change."],answer:1,explain:"Sau trạng từ hạn chế ở đầu câu, đảo trợ động từ lên trước chủ ngữ: Rarely have we seen…"},
+  {q:"A “paradox” is best defined as:",options:["a simple and obvious fact","a statement that seems contradictory yet may be true","a long technical manual","a type of statistical graph"],answer:1,explain:"Paradox = điều tưởng như mâu thuẫn nhưng có thể chứa sự thật."}],
+ fills:[
+  {q:"The more options we have, the harder each decision becomes — a modern ______.",a:"paradox",e:"Từ cần điền là “paradox” (nghịch lý)."},
+  {q:"Digital clocks and endless feeds have changed our ______ of time.",a:"perception",e:"Từ cần điền là “perception” (cách cảm nhận, nhận thức)."}],
+ writings:[
+  {prompt:"Write an analytical paragraph (about 120–150 words): Has technology changed the way human beings perceive time? Develop one clear argument and support it with an example.",min:120},
+  {prompt:"Write a paragraph (about 110–140 words) analysing a paradox of modern life (for example, “connected but lonely”). Use at least one fronted or inverted structure for emphasis.",min:110}],
+ imgListen:[
+  {script:"The Earth is wrapped in a glowing network of connections, seen from space.",answer:0,explain:"Câu mô tả: “The Earth is wrapped in a glowing network of connections, seen from space.” — Trái Đất được bao bọc bởi một mạng lưới kết nối phát sáng, nhìn từ vũ trụ.",
+   images:[
+    {src:UIMG+"photo-1451187580459-43490279c0fa?q=80&w=700&auto=format&fit=crop",en:"Earth with a glowing network, seen from space",vi:"Trái Đất với mạng lưới phát sáng, nhìn từ vũ trụ"},
+    {src:UIMG+"photo-1446776811953-b23d57bd21aa?q=80&w=700&auto=format&fit=crop",en:"Earth seen from a space station",vi:"Trái Đất nhìn từ trạm vũ trụ"},
+    {src:UIMG+"photo-1462331940025-496dfbfc7564?q=80&w=700&auto=format&fit=crop",en:"A colourful nebula in deep space",vi:"Một tinh vân đầy màu sắc trong vũ trụ sâu thẳm"},
+    {src:UIMG+"photo-1444703686981-a3abbc4d4fe3?q=80&w=700&auto=format&fit=crop",en:"Stars shining above a mountain landscape",vi:"Những ngôi sao tỏa sáng trên dãy núi"}]},
+  {script:"Rows of green code are running down a dark computer screen.",answer:2,explain:"Câu mô tả: “Rows of green code are running down a dark computer screen.” — các dòng mã màu xanh lá đang chạy xuống trên một màn hình máy tính tối.",
+   images:[
+    {src:UIMG+"photo-1498050108023-c5249f4df085?q=80&w=700&auto=format&fit=crop",en:"Programming code on a laptop screen",vi:"Mã lập trình trên màn hình máy tính xách tay"},
+    {src:UIMG+"photo-1558494949-ef010cbdcc31?q=80&w=700&auto=format&fit=crop",en:"Rows of servers in a data centre",vi:"Các hàng máy chủ trong một trung tâm dữ liệu"},
+    {src:UIMG+"photo-1526374965328-7f61d4dc18c5?q=80&w=700&auto=format&fit=crop",en:"Green code streaming down a dark screen",vi:"Mã xanh đang chạy xuống trên màn hình tối"},
+    {src:UIMG+"photo-1550745165-9bc0b252726f?q=80&w=700&auto=format&fit=crop",en:"A retro game console with a small screen",vi:"Một máy chơi game cổ điển với màn hình nhỏ"}]}]}
+);
+
 /* ===== ĐOẠN ĐỌC THEO CẤP (dùng cho bài tập Đọc hiểu + Sắp xếp câu thành đoạn trong bài học) ===== */
 const LEVEL_READING = {
  A1:{passage:"Lan is a new student in Class 1A. She gets up at six and has breakfast with her family. Her school is near her house, so she walks to school with her brother. After school, Lan does her homework and plays in the garden.",qs:[
@@ -764,8 +987,8 @@ const ERROR_EXTRA = {
 };
 
 /* ===== HỆ THỐNG DẠNG BÀI TẬP MỞ RỘNG ===== */
-const EX_TYPE_LABELS = {mcq:"Trắc nghiệm",fill:"Điền từ vào chỗ trống",truefalse:"Đúng / Sai",meaning:"Chọn từ đúng theo nghĩa",matching:"Nối từ với nghĩa",order_words:"Sắp xếp từ thành câu",order_sentences:"Sắp xếp câu thành đoạn",listen_fill:"Nghe và điền từ (TTS)",reading:"Đọc đoạn văn & trả lời",error:"Sửa lỗi sai trong câu",writing:"Viết câu/đoạn (chấm ước lượng)",speaking:"Nói & ghi âm (tự so sánh)"};
-const EX_TYPE_ORDER = ["mcq","reading","listen_fill","fill","meaning","matching","truefalse","error","order_words","order_sentences","writing","speaking"];
+const EX_TYPE_LABELS = {mcq:"Trắc nghiệm",listen_img:"Nghe & chọn hình (TOEIC Part 1)",fill:"Điền từ vào chỗ trống",truefalse:"Đúng / Sai",meaning:"Chọn từ đúng theo nghĩa",matching:"Nối từ với nghĩa",order_words:"Sắp xếp từ thành câu",order_sentences:"Sắp xếp câu thành đoạn",listen_fill:"Nghe và điền từ (TTS)",reading:"Đọc đoạn văn & trả lời",error:"Sửa lỗi sai trong câu",writing:"Viết câu/đoạn (chấm ước lượng)",speaking:"Nói & ghi âm (tự so sánh)"};
+const EX_TYPE_ORDER = ["mcq","listen_img","reading","listen_fill","fill","meaning","matching","truefalse","error","order_words","order_sentences","writing","speaking"];
 function hashStr(s){ let h=2166136261; s=String(s||""); for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 function seededShuffle(arr, seed){ const a=arr.slice(); let x=hashStr(seed)||1; const rnd=()=>{ x^=x<<13; x^=x>>>17; x^=x<<5; x>>>=0; return x/4294967296; }; for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function blankOut(sentence, word){ if(!sentence||!word) return null; const w=String(word).trim(); const re=new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i"); if(!re.test(sentence)) return null; return sentence.replace(re,"_____"); }
@@ -774,6 +997,15 @@ function lessonIndexGlobal(l){ const all=(typeof allLessons==="function")? allLe
 const _exCache={};
 function getExercises(l){
   if(_exCache[l.id]) return _exCache[l.id];
+  /* Bài học mới (có imgListen): bộ bài tập cố định 8 câu — 2 Nghe & chọn hình kiểu TOEIC Part 1,
+     2 trắc nghiệm, 2 Điền từ, 2 Viết (chấm ước tính tham khảo). */
+  if(l.imgListen && l.imgListen.length){ const ex=[];
+    l.imgListen.forEach(it=>ex.push({type:"listen_img",script:it.script,images:it.images,answer:it.answer,explain:it.explain}));
+    (l.quiz||[]).forEach(q=>ex.push({type:"mcq",q:q.q,options:q.options,answer:q.answer,explain:q.explain}));
+    (l.fills||[]).forEach(f=>ex.push({type:"fill",q:f.q,answer:f.a,explain:f.e}));
+    (l.writings||[]).forEach(w=>ex.push({type:"writing",prompt:w.prompt,min:w.min,explain:"Bài viết được chấm sơ bộ theo rubric — điểm ước lượng tham khảo của hệ thống, không phải điểm thi chính thức."}));
+    _exCache[l.id]=ex; return ex;
+  }
   const ex=[]; const vs=l.vocab||[];
   (l.quiz||[]).forEach(q=>ex.push({type:"mcq",q:q.q,options:q.options,answer:q.answer,explain:q.explain}));
   if(vs.length>=2){ const v=vs[0]; const opts=seededShuffle(vs.slice(0,4).map(x=>x.vi), l.id+"-meaning");
@@ -1020,7 +1252,7 @@ function blankProgress(startLevel){
   return { xp:0, studyMins:0, studyDates:[], lastStudyDay:"", streak:0, placementDone:false, suggestedLevel:startLevel||"A1",
     completedLessons:{}, lessonScores:{}, skillDone:{listening:0,reading:0,writing:0,speaking:0}, skillRight:{listening:0,reading:0,writing:0,speaking:0},
     skillTotal:{listening:0,reading:0,writing:0,speaking:0}, vocab:[], finalResults:{}, toeicHistory:[], activityDay:"", activity:{lesson:false,listening:false,flash:false},
-    readingStats:[], customLessons:[], adminLessons:null, dataVersion:2 };
+    readingStats:[], customLessons:[], adminLessons:null, entryTests:[], entryTestDone:false, entryTestSkipped:false, dataVersion:2 };
 }
 function loadDB(){ try{ const d = JSON.parse(localStorage.getItem(DB_KEY)); if(d && d.users) return d; }catch(e){} return {users:{}, session:null}; }
 let DB = loadDB();
@@ -1086,11 +1318,24 @@ function speak(text, rate){
   if(vs.length) u.voice = vs[0];
   speechSynthesis.speak(u);
 }
+function ttsOK(){ return "speechSynthesis" in window; }
+/* Khung hình minh hoạ: ảnh tải lazy từ nguồn công khai; nếu lỗi thì hiện khung thay thế có chữ mô tả (EN + VI) thay vì vỡ bài. */
+function imgFallbackHtml(im){ return `<span class="imgfallback" style="display:none">🖼 ${esc(im.vi)}<br><span class="en">${esc(im.en)}</span></span>`; }
+function imgOptHtml(e, exIdx, imgIdx, st){
+  const ans=st.answers[exIdx]; let cls="imgcard";
+  if(st.graded){ if(imgIdx===e.answer) cls+=" right"; else if(ans===imgIdx) cls+=" wrong"; }
+  else if(ans===imgIdx) cls+=" sel";
+  const im=e.images[imgIdx];
+  return `<button type="button" class="${cls}" data-img-opt="${exIdx}:${imgIdx}" ${st.graded?"disabled":""}>
+   <span class="imgwrap"><img src="${esc(im.src)}" alt="${esc(im.en)} — ${esc(im.vi)}" loading="lazy" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='flex';">${imgFallbackHtml(im)}</span>
+   <span class="imglabel">Hình ${String.fromCharCode(65+imgIdx)}</span></button>`;
+}
 
 /* ================= ĐIỀU HƯỚNG ================= */
 let currentView = "dashboard";
 const appEl = document.getElementById("app");
 function show(view){
+  if(view==="admin" && sbRole!=="admin"){ toast("Phần quản trị chỉ mở cho tài khoản có role admin trên Supabase."); view="dashboard"; }
   currentView = view;
   document.querySelectorAll("#mainNav button").forEach(b=>b.classList.toggle("active", b.dataset.view===view));
   const r = {dashboard:renderDashboard, path:renderPath, lessons:renderLessons, skills:renderSkills, toeic:renderToeic, finaltest:renderFinalHome, vocab:renderVocab, profile:renderProfile, admin:renderAdmin}[view];
@@ -1107,40 +1352,135 @@ document.getElementById("themeBtn").addEventListener("click", ()=>{
 });
 (function(){ try{ const t=localStorage.getItem("linguahub_theme"); if(t) document.documentElement.setAttribute("data-theme",t); }catch(e){} })();
 
-/* ================= AUTH (cục bộ) ================= */
+/* ================= AUTH — Supabase Auth =================
+   Client Supabase (sbClient) được tạo ở khối script cuối file, nơi có
+   hằng số SUPABASE_PUBLISHABLE_KEY. Tiến độ học vẫn giữ trong
+   localStorage (DB) theo email để không mất XP/bài đã hoàn thành. */
+let sbClient = null;   // được gán ở script Supabase cuối file
+let sbUser = null;     // user của phiên Supabase hiện tại
+let sbRole = null;     // role đọc từ bảng public.profiles ("admin" | khác | null)
+let appEntered = false;
 const tabLogin=document.getElementById("tabLogin"), tabRegister=document.getElementById("tabRegister");
 function setTab(reg){ tabLogin.classList.toggle("active",!reg); tabRegister.classList.toggle("active",reg);
   document.getElementById("loginForm").classList.toggle("hidden",reg); document.getElementById("regForm").classList.toggle("hidden",!reg); }
 tabLogin.addEventListener("click",()=>setTab(false)); tabRegister.addEventListener("click",()=>setTab(true));
 function hashPw(pw){ let h=0; for(let i=0;i<pw.length;i++){ h=(h*31 + pw.charCodeAt(i))|0; } return "h"+h; }
-document.getElementById("regForm").addEventListener("submit", e=>{
+function sbKeyMissing(){ try{ return typeof SUPABASE_PUBLISHABLE_KEY==="undefined" || !SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY==="PASTE_PUBLISHABLE_KEY_HERE"; }catch(e){ return true; } }
+function sbErrorVi(error){
+  const m = (error && error.message ? String(error.message) : "");
+  if(/invalid login credentials/i.test(m)) return "Email hoặc mật khẩu chưa đúng. Hãy kiểm tra lại rồi thử đăng nhập lần nữa.";
+  if(/email not confirmed/i.test(m)) return "Tài khoản chưa được xác nhận email. Hãy mở hộp thư, bấm liên kết xác nhận trong email của Supabase rồi quay lại đăng nhập. (Muốn bỏ bước này: vào Supabase → Authentication → Providers → Email và tắt “Confirm email”.)";
+  if(/user already registered/i.test(m)) return "Email này đã được đăng ký rồi. Hãy chuyển sang tab Đăng nhập.";
+  if(/password should be at least/i.test(m)) return "Mật khẩu quá ngắn — Supabase yêu cầu tối thiểu 6 ký tự.";
+  if(/unable to validate email|invalid format/i.test(m)) return "Địa chỉ email chưa đúng định dạng. Hãy kiểm tra lại email.";
+  if(/rate limit/i.test(m)) return "Bạn đã thao tác quá nhiều lần liên tiếp. Hãy đợi vài phút rồi thử lại.";
+  if(/failed to fetch|network|load failed/i.test(m)) return "Không kết nối được tới Supabase. Hãy kiểm tra mạng, và chắc chắn bạn đã dán đúng Publishable key (bắt đầu bằng sb_publishable_).";
+  if(sbKeyMissing()) return "Chưa dán Publishable key của Supabase vào file này (Ctrl+F tìm SUPABASE_PUBLISHABLE_KEY) nên chưa đăng nhập online được.";
+  return "Đã có lỗi xảy ra. Hãy thử lại sau ít phút. ("+m+")";
+}
+/* Đảm bảo có hồ sơ học cục bộ cho tài khoản Supabase — giữ nguyên tiến độ cũ nếu email đã từng học trên máy này. */
+function ensureLocalUser(user, extras){
+  const email=(user.email||"").trim().toLowerCase(); if(!email) return null;
+  let u=DB.users[email];
+  if(!u){
+    u={ name:(extras&&extras.name) || (user.user_metadata&&user.user_metadata.full_name) || email.split("@")[0],
+        email, passHash:"", goal:(extras&&extras.goal)||"750", dailyMins:(extras&&extras.dailyMins)||30,
+        priority:(extras&&extras.priority)||"listening", created:todayStr(), progress:blankProgress("A1"), supabase:true };
+    DB.users[email]=u;
+  }
+  DB.session=email; saveDB();
+  return u;
+}
+async function fetchSbRole(uid){
+  if(!sbClient || !uid) return null;
+  try{
+    let r=await sbClient.from("profiles").select("role").eq("id", uid).maybeSingle();
+    if(r.error){ r=await sbClient.from("profiles").select("role").eq("user_id", uid).maybeSingle(); }
+    if(r.error || !r.data) return null;
+    return r.data.role || null;
+  }catch(e){ return null; }
+}
+async function enterWithSupabase(user){
+  if(appEntered && sbUser && sbUser.id===user.id) return;
+  sbUser=user;
+  ensureLocalUser(user);
+  sbRole=await fetchSbRole(user.id);
+  appEntered=true;
+  enterApp();
+}
+/* Lưu thêm bài đã hoàn thành lên bảng public.progress — thất bại thì bỏ qua lặng lẽ, học tiếp bình thường. */
+async function syncProgressToSupabase(lessonId, score){
+  if(!sbClient || !sbUser) return;
+  try{
+    await sbClient.from("progress").upsert(
+      { user_id:sbUser.id, lesson_id:lessonId, completed:true, score:(typeof score==="number"? score : null) },
+      { onConflict:"user_id,lesson_id" });
+  }catch(e){ /* không chặn giao diện, không hiện lỗi kỹ thuật */ }
+}
+document.getElementById("regForm").addEventListener("submit", async e=>{
   e.preventDefault();
   const name=document.getElementById("regName").value.trim(), email=document.getElementById("regEmail").value.trim().toLowerCase(),
         pass=document.getElementById("regPass").value, err=document.getElementById("regErr");
-  if(DB.users[email]){ err.textContent="Email này đã có tài khoản cục bộ trên trình duyệt này. Hãy đăng nhập."; return; }
-  DB.users[email] = { name, email, passHash:hashPw(pass),
-    goal:document.getElementById("regGoal").value, dailyMins:+document.getElementById("regDaily").value,
-    priority:document.getElementById("regPriority").value, created:todayStr(), progress:blankProgress("A1") };
-  DB.session = email; saveDB(); enterApp();
-  toast("Đã tạo tài khoản cục bộ. Hãy làm bài kiểm tra đầu vào ở mục Lộ trình để được đề xuất cấp độ!");
+  err.textContent="";
+  const extras={ name, goal:document.getElementById("regGoal").value, dailyMins:+document.getElementById("regDaily").value, priority:document.getElementById("regPriority").value };
+  if(!sbClient){
+    err.textContent = sbKeyMissing()
+      ? "Chưa dán Publishable key của Supabase nên chưa đăng ký được. Hãy mở file này, bấm Ctrl+F tìm SUPABASE_PUBLISHABLE_KEY, dán key publishable của bạn (bắt đầu bằng sb_publishable_) vào rồi tải lại trang."
+      : "Không tải được thư viện Supabase (có thể do mạng). Hãy kiểm tra kết nối rồi tải lại trang và thử đăng ký lại.";
+    return;
+  }
+  err.textContent="Đang tạo tài khoản…";
+  let res;
+  try{ res=await sbClient.auth.signUp({ email, password:pass, options:{ data:{ full_name:name } } }); }
+  catch(ex){ err.textContent=sbErrorVi(ex); return; }
+  err.textContent="";
+  if(res.error){ err.textContent=sbErrorVi(res.error); return; }
+  if(!DB.users[email]){ DB.users[email]={ name, email, passHash:"", goal:extras.goal, dailyMins:extras.dailyMins, priority:extras.priority, created:todayStr(), progress:blankProgress("A1"), supabase:true }; saveDB(); }
+  if(res.data && res.data.session && res.data.user){
+    await enterWithSupabase(res.data.user);
+    toast("Đăng ký thành công! Hãy làm bài kiểm tra đầu vào ở mục Lộ trình để được đề xuất cấp độ!");
+  } else {
+    setTab(false);
+    document.getElementById("loginOk").textContent="Đăng ký thành công! Supabase đang yêu cầu xác nhận email — hãy mở hộp thư, bấm liên kết xác nhận trong email, rồi đăng nhập tại đây.";
+    toast("Đã đăng ký. Hãy kiểm tra email để xác nhận tài khoản trước khi đăng nhập.");
+  }
 });
-document.getElementById("loginForm").addEventListener("submit", e=>{
+document.getElementById("loginForm").addEventListener("submit", async e=>{
   e.preventDefault();
   const email=document.getElementById("loginEmail").value.trim().toLowerCase(), pass=document.getElementById("loginPass").value,
-        err=document.getElementById("loginErr"), u=DB.users[email];
-  if(!u){ err.textContent="Không tìm thấy tài khoản cục bộ với email này trên trình duyệt này."; return; }
-  if(u.passHash!==hashPw(pass)){ err.textContent="Sai mật khẩu. (Mật khẩu chỉ lưu trên trình duyệt này.)"; return; }
-  DB.session=email; saveDB(); enterApp(); toast("Xin chào, "+u.name+"!");
+        err=document.getElementById("loginErr"), ok=document.getElementById("loginOk");
+  err.textContent=""; ok.textContent="";
+  if(!sbClient){
+    err.textContent = sbKeyMissing()
+      ? "Chưa dán Publishable key của Supabase nên chưa đăng nhập được. Hãy mở file này, bấm Ctrl+F tìm SUPABASE_PUBLISHABLE_KEY, dán key publishable của bạn (bắt đầu bằng sb_publishable_) vào rồi tải lại trang."
+      : "Không tải được thư viện Supabase (có thể do mạng). Hãy kiểm tra kết nối rồi tải lại trang và thử đăng nhập lại.";
+    return;
+  }
+  err.textContent="Đang đăng nhập…";
+  let res;
+  try{ res=await sbClient.auth.signInWithPassword({ email, password:pass }); }
+  catch(ex){ err.textContent=sbErrorVi(ex); return; }
+  err.textContent="";
+  if(res.error){ err.textContent=sbErrorVi(res.error); return; }
+  await enterWithSupabase(res.data.user);
+  toast("Xin chào, "+me().name+"!");
 });
-document.getElementById("logoutBtn").addEventListener("click", ()=>{ DB.session=null; saveDB(); location.reload(); });
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
+  DB.session=null; saveDB(); sbUser=null; sbRole=null; appEntered=false; location.reload();
+});
 function enterApp(){
   const u=me(); if(!u) return;
   document.getElementById("view-auth").classList.add("hidden");
   document.getElementById("storageNotice").classList.add("hidden");
   appEl.classList.remove("hidden");
   document.getElementById("mainNav").classList.remove("hidden");
+  const adminBtn=document.querySelector('#mainNav button[data-view="admin"]');
+  if(adminBtn) adminBtn.classList.toggle("hidden", sbRole!=="admin");
   const chip=document.getElementById("userChip"); chip.classList.remove("hidden"); chip.textContent="👤 "+u.name;
   document.getElementById("logoutBtn").classList.remove("hidden");
+  const p0=u.progress;
+  if(!p0.entryTestDone && !p0.entryTestSkipped && !p0.placementDone && Object.keys(p0.completedLessons).length===0){ renderEntryTest(); return; }
   show(u.progress.placementDone ? "dashboard" : "path");
 }
 
@@ -1153,6 +1493,7 @@ function renderDashboard(){
   const u=me(), p=u.progress;
   const doneCount = Object.keys(p.completedLessons).length, totalLessons = allLessons().length;
   const w = weakestSkill();
+  const lastEt=(p.entryTests||[])[(p.entryTests||[]).length-1];
   const wLesson = allLessons().find(l=>l.skill===w && !p.completedLessons[l.id] && levelStatus(l.level)!=="lock")
                || allLessons().find(l=>!p.completedLessons[l.id] && levelStatus(l.level)!=="lock");
   const nextLesson = allLessons().find(l=>!p.completedLessons[l.id] && levelStatus(l.level)!=="lock");
@@ -1172,6 +1513,10 @@ function renderDashboard(){
      <div class="card stat"><div class="num">${p.studyMins}′</div><div class="lbl">Tổng thời gian học</div></div>
      <div class="card stat"><div class="num">${doneCount}/${totalLessons}</div><div class="lbl">Bài học đã hoàn thành</div></div>
    </div>
+   <div class="card"><h3>Bài kiểm tra đầu vào mới — Nghe · Viết · Điền từ · Từ vựng &amp; Ngữ pháp</h3>
+   ${lastEt?`<p class="small">Lần làm gần nhất: <strong>${esc(lastEt.date)}</strong> · Tổng điểm <strong>${lastEt.overall}/100</strong> · Nghe ${lastEt.scores.listening}% · Viết ${lastEt.scores.writing}% (ước tính tham khảo) · Điền từ ${lastEt.scores.fill}% · Từ vựng &amp; ngữ pháp ${lastEt.scores.vocab}% · Cấp độ được gợi ý: <span class="pill blue">${lastEt.suggested} — ${LEVEL_NAMES[lastEt.suggested]}</span></p>`
+     :'<p class="small muted">Bạn chưa làm bài kiểm tra đầu vào mới. Bài test có phần Nghe chọn hình kiểu TOEIC Part 1, 2 đề Viết ngắn (điểm ước tính tham khảo), Điền từ và Từ vựng &amp; Ngữ pháp — cuối bài sẽ gợi ý cấp độ bắt đầu A1–C2 cho bạn xác nhận.</p>'}
+   <button class="btn-sm btn-primary" id="dashEntryTest">${lastEt?"Làm lại bài kiểm tra đầu vào":"Làm bài kiểm tra đầu vào"}</button></div>
    <div class="grid grid2">
      <div class="card"><h3>Tiến độ 4 kỹ năng (độ chính xác từ bài đã làm)</h3>
        ${Object.keys(SKILLS).map(s=>`<div><div class="rowflex"><span style="min-width:90px"><strong>${SKILLS[s]}</strong></span><span class="spacer"></span><span class="small muted">${p.skillTotal[s]? skillPct(s)+"% · "+p.skillDone[s]+" hoạt động" : "chưa có dữ liệu"}</span></div><div class="bar ${s===w?"orange":""}"><i style="width:${p.skillTotal[s]?skillPct(s):0}%"></i></div></div>`).join("")}
@@ -1190,6 +1535,7 @@ function renderDashboard(){
    <div class="card"><h3>Huy hiệu & cột mốc</h3><div class="grid grid3">
      ${badges().map(b=>`<div class="badgebox ${b.on?"":"off"}"><div class="ic">${b.icon}</div><strong>${b.name}</strong><div class="small muted">${b.desc}</div><div>${b.on?'<span class="pill done">Đã đạt</span>':'<span class="pill lock">Chưa đạt</span>'}</div></div>`).join("")}
    </div><p class="small muted">Mốc chuỗi ngày: 7 ngày 🔥 · 30 ngày 🏆 · 100 ngày 👑. Lưu ý: XP và huy hiệu <strong>không</strong> thay thế điểm bài kiểm tra cuối cấp khi mở khóa cấp độ.</p></div>`;
+  const etb=document.getElementById("dashEntryTest"); if(etb) etb.addEventListener("click",()=>renderEntryTest());
   bindNavHelpers();
 }
 function bindNavHelpers(){
@@ -1257,6 +1603,181 @@ function drawPlacementQ(host){
   });
 }
 
+/* ================= BÀI KIỂM TRA ĐẦU VÀO MỚI (riêng, hiện trước khi vào học) =================
+   Tách biệt hoàn toàn với bài kiểm tra đầu vào cũ (PLACEMENT ở mục Lộ trình).
+   Hiện sau khi đăng nhập lần đầu (chưa có kết quả, chưa bỏ qua, chưa học bài nào);
+   có nút “Vào học ngay” để bỏ qua, làm lại không giới hạn từ Tổng quan.
+   Gồm: Nghe (TTS thật của trình duyệt, phát lại + chỉnh tốc độ; chọn hình kiểu
+   TOEIC Part 1 và chọn đáp án), Viết (2 đề — điểm ước tính tham khảo, không phải
+   điểm thi chính thức), Điền từ, Từ vựng & Ngữ pháp. Kết quả lưu ở localStorage. */
+const ENTRY_TEST = {
+ listenImgs:[
+  {script:"A man is riding a bicycle in the park.",answer:0,explain:"Câu mô tả: “A man is riding a bicycle in the park.” — một người đàn ông đang đạp xe đạp.",
+   images:[
+    {src:UIMG+"photo-1485965120184-e220f721d03e?q=80&w=700&auto=format&fit=crop",en:"A bicycle leaning against a wall",vi:"Một chiếc xe đạp dựng cạnh bức tường"},
+    {src:UIMG+"photo-1503376780353-7e6692767b70?q=80&w=700&auto=format&fit=crop",en:"A red sports car on the road",vi:"Một chiếc ô tô thể thao màu đỏ trên đường"},
+    {src:UIMG+"photo-1544620347-c4fd4a3d5957?q=80&w=700&auto=format&fit=crop",en:"A bus on a city street",vi:"Một chiếc xe buýt trên đường phố"},
+    {src:UIMG+"photo-1474487548417-781cb71495f3?q=80&w=700&auto=format&fit=crop",en:"A train at a railway station",vi:"Một đoàn tàu ở nhà ga xe lửa"}]},
+  {script:"People are reading quietly in a large library.",answer:2,explain:"Câu mô tả: “People are reading quietly in a large library.” — mọi người đang đọc sách yên lặng trong một thư viện lớn.",
+   images:[
+    {src:UIMG+"photo-1521017432531-fbd92d768814?q=80&w=700&auto=format&fit=crop",en:"People talking inside a café",vi:"Mọi người đang trò chuyện trong quán cà phê"},
+    {src:UIMG+"photo-1497366216548-37526070297c?q=80&w=700&auto=format&fit=crop",en:"An empty modern office",vi:"Một văn phòng hiện đại đang trống"},
+    {src:UIMG+"photo-1507842217343-583bb7270b66?q=80&w=700&auto=format&fit=crop",en:"A grand library hall with tall shelves",vi:"Một sảnh thư viện lớn với các kệ sách cao"},
+    {src:UIMG+"photo-1517248135467-4c7edcad34c4?q=80&w=700&auto=format&fit=crop",en:"Tables and chairs inside a restaurant",vi:"Bàn ghế bên trong một nhà hàng"}]}],
+ listenMcq:[
+  {script:"Woman: Excuse me, what time does the museum close? Man: It closes at six o'clock, but the last tickets are sold at half past five.",
+   q:"When are the last tickets sold?",options:["At five o'clock","At half past five","At six o'clock","At half past six"],answer:1,
+   explain:"Người đàn ông nói: “the last tickets are sold at half past five” — vé cuối cùng bán lúc 5 giờ 30."},
+  {script:"Good morning. This is the eight o'clock news. The city council has announced that the new bridge will open next spring, two months later than planned, because the winter weather was very bad.",
+   q:"Why will the bridge open later than planned?",options:["There was not enough money","The winter weather was very bad","The workers went on strike","The design was changed"],answer:1,
+   explain:"Bản tin nói rõ nguyên nhân: “because the winter weather was very bad” — thời tiết mùa đông rất xấu."}],
+ fills:[
+  {q:"She ______ to school by bus every day.",a:"goes",e:"Chủ ngữ “she” + thói quen hằng ngày ở hiện tại đơn → “goes”."},
+  {q:"We ______ a very interesting film last night.",a:"watched",e:"“Last night” là dấu hiệu quá khứ đơn → “watched”."},
+  {q:"If it ______ tomorrow, we will stay at home.",a:"rains",e:"Câu điều kiện loại 1: mệnh đề if dùng hiện tại đơn → “rains”."},
+  {q:"He has lived in this city ______ 2019.",a:"since",e:"Hiện tại hoàn thành đi với mốc thời gian cụ thể (2019) dùng “since”."}],
+ vocab:[
+  {q:"I ______ a teacher at a primary school.",options:["am","is","are","be"],answer:0,explain:"Chủ ngữ “I” đi với động từ “am”."},
+  {q:"This novel is ______ than the one we read last month.",options:["interesting","more interesting","most interesting","interestinger"],answer:1,explain:"So sánh hơn với tính từ dài dùng “more interesting” + than."},
+  {q:"She asked me where I ______.",options:["live","lived","am live","lives"],answer:1,explain:"Câu tường thuật phải lùi thì: “where I lived”."},
+  {q:"The meeting was called ______ because the director was seriously ill.",options:["off","up it","out of","away from it"],answer:0,explain:"“Call off” = hủy bỏ (cuộc họp, sự kiện)."},
+  {q:"______ the heavy rain, the outdoor concert continued.",options:["Because","Although it","Despite","Unless the"],answer:2,explain:"“Despite” + cụm danh từ (the heavy rain) diễn tả sự nhượng bộ."},
+  {q:"Rarely ______ such a moving performance in this theatre.",options:["I have seen","have I seen","I seen have","seen I have"],answer:1,explain:"Đảo ngữ sau trạng từ hạn chế “Rarely”: “have I seen…”."}],
+ writings:[
+  {prompt:"Write a short paragraph (about 40–60 words) about your daily routine: what time you get up, what you do in the morning, and how you spend your evening.",min:40},
+  {prompt:"Write a short paragraph (about 60–90 words): Do you prefer learning English online or in a classroom? Give your opinion with at least two reasons.",min:60}]
+};
+let entryState=null;
+function etSuggested(pct){ return pct>=85?"C2":pct>=70?"C1":pct>=55?"B2":pct>=35?"B1":pct>=15?"A2":"A1"; }
+function etFreshState(stage){ return {stage:stage||"intro",answers:{},fills:{},vocab:{},writings:{},rates:{},result:null}; }
+function etImgBtn(gi, ii, im, graded){
+  const st=entryState, ans=st.answers["img"+gi], it=ENTRY_TEST.listenImgs[gi];
+  let cls="imgcard";
+  if(graded){ if(ii===it.answer) cls+=" right"; else if(ans===ii) cls+=" wrong"; }
+  else if(ans===ii) cls+=" sel";
+  return `<button type="button" class="${cls}" data-et-img="${gi}:${ii}" ${graded?"disabled":""}>
+   <span class="imgwrap"><img src="${esc(im.src)}" alt="${esc(im.en)} — ${esc(im.vi)}" loading="lazy" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='flex';">${imgFallbackHtml(im)}</span>
+   <span class="imglabel">Hình ${String.fromCharCode(65+ii)}</span></button>`;
+}
+function renderEntryTest(){
+  if(!myProg()) return;
+  currentView="entrytest";
+  document.querySelectorAll("#mainNav button").forEach(b=>b.classList.remove("active"));
+  entryState=etFreshState("intro");
+  drawEntryTest();
+  window.scrollTo({top:0});
+}
+function drawEntryTest(){
+  const p=myProg(), st=entryState, T=ENTRY_TEST; if(!p||!st) return;
+  if(st.stage==="intro"){
+    const last=(p.entryTests||[])[(p.entryTests||[]).length-1];
+    appEl.innerHTML=`<div class="card">
+     <span class="pill blue">Bài kiểm tra đầu vào mới</span>
+     <h1 style="margin-top:8px">Kiểm tra đầu vào trước khi vào học</h1>
+     <p>Bài test ngắn này giúp gợi ý cấp độ bắt đầu phù hợp với bạn (A1–C2). Bài gồm 4 phần:</p>
+     <p>🎧 <strong>Nghe</strong> — nghe bằng giọng đọc thật của trình duyệt (có nút phát lại và chỉnh tốc độ), chọn hình đúng kiểu TOEIC Part 1 và chọn đáp án đúng.<br>
+     ✍️ <strong>Viết</strong> — 2 đề viết ngắn, chấm theo thang điểm <strong>ước tính tham khảo</strong> kèm nhận xét, không phải điểm thi chính thức.<br>
+     🧩 <strong>Điền từ</strong> vào chỗ trống · 📚 <strong>Từ vựng &amp; Ngữ pháp</strong> nhiều cấp độ.</p>
+     ${last?`<div class="notice blue small">Kết quả lần gần nhất (${esc(last.date)}): tổng điểm <strong>${last.overall}/100</strong> · Nghe ${last.scores.listening}% · Viết ${last.scores.writing}% (ước tính) · Điền từ ${last.scores.fill}% · Từ vựng &amp; ngữ pháp ${last.scores.vocab}% · Cấp độ gợi ý: <strong>${last.suggested}</strong>. Bạn có thể làm lại không giới hạn.</div>`:""}
+     <div class="rowflex" style="margin-top:10px"><button class="btn-primary" id="etStart">Bắt đầu làm bài kiểm tra</button>
+     <button id="etSkip">Vào học ngay (bỏ qua)</button></div>
+     <p class="small muted">Kết quả bài test được lưu trên trình duyệt này. Nếu bỏ qua bây giờ, bạn vẫn có thể làm bài sau từ mục Tổng quan.</p></div>`;
+    document.getElementById("etStart").addEventListener("click",()=>{ entryState=etFreshState("test"); drawEntryTest(); window.scrollTo({top:0}); });
+    document.getElementById("etSkip").addEventListener("click",()=>{ const pp=myProg(); pp.entryTestSkipped=true; saveDB(); show("dashboard"); });
+    return;
+  }
+  if(st.stage==="test"){
+    const rateSel=key=>{ const r=st.rates[key]||"0.9"; return `<select class="inline" data-et-rate="${key}">${["0.75","0.9","1","1.15"].map(x=>`<option value="${x}" ${r===x?"selected":""}>${x}×</option>`).join("")}</select>`; };
+    appEl.innerHTML=`<div class="card">
+     <span class="pill blue">Bài kiểm tra đầu vào mới</span>
+     <h1 style="margin-top:8px">Bài kiểm tra đầu vào</h1>
+     <p class="small muted">Hoàn thành cả 4 phần rồi bấm “Nộp bài &amp; xem kết quả”. Điểm phần Viết là điểm ước tính tham khảo theo rubric của hệ thống.</p>
+     ${ttsOK()?"":'<div class="notice red small">Trình duyệt này không hỗ trợ giọng đọc (TTS) nên phần Nghe không phát được audio — transcript của từng câu nghe được hiện sẵn bên dưới để bạn vẫn làm được bài.</div>'}
+     <h2 style="margin-top:18px">Phần 1 · Nghe (Listening)</h2>
+     ${T.listenImgs.map((it,gi)=>`<div style="margin:12px 0"><p><strong>Câu nghe ${gi+1}.</strong> Nghe câu mô tả rồi chọn hình đúng nhất.</p>
+       <div class="rowflex"><button class="btn-sm btn-primary" data-et-play="img${gi}">🔊 Nghe câu mô tả</button><label style="margin:0">Tốc độ ${rateSel("img"+gi)}</label></div>
+       ${ttsOK()?"":`<div class="explain"><strong>Transcript:</strong> <span class="en">${esc(it.script)}</span></div>`}
+       <div class="imggrid">${it.images.map((im,ii)=>etImgBtn(gi,ii,im,false)).join("")}</div></div>`).join("")}
+     ${T.listenMcq.map((it,qi)=>`<div style="margin:12px 0"><p><strong>Câu nghe ${T.listenImgs.length+qi+1}.</strong> Nghe đoạn ngắn rồi trả lời câu hỏi.</p>
+       <div class="rowflex"><button class="btn-sm btn-primary" data-et-play="lm${qi}">🔊 Nghe</button><label style="margin:0">Tốc độ ${rateSel("lm"+qi)}</label></div>
+       ${ttsOK()?"":`<div class="explain"><strong>Transcript:</strong> <span class="en">${esc(it.script)}</span></div>`}
+       <p><span class="en">${esc(it.q)}</span></p>
+       ${it.options.map((o,oi)=>`<button class="opt ${st.answers["lm"+qi]===oi?"sel":""}" data-et-lm="${qi}:${oi}">${String.fromCharCode(65+oi)}. ${esc(o)}</button>`).join("")}</div>`).join("")}
+     <h2 style="margin-top:20px">Phần 2 · Viết (Writing) — điểm ước tính tham khảo</h2>
+     ${T.writings.map((w,wi)=>`<div style="margin:12px 0"><p><strong>Đề viết ${wi+1}.</strong> <span class="en">${esc(w.prompt)}</span></p>
+       <textarea data-et-write="${wi}" rows="5" placeholder="Write your answer in English here…">${esc(st.writings[wi]||"")}</textarea>
+       <p class="small muted">Số từ: <span id="etwc${wi}">${(st.writings[wi]||"").trim()?(st.writings[wi].trim().split(/\s+/).filter(Boolean).length):0}</span> / gợi ý khoảng ${w.min} từ · <span class="pill gold">Điểm viết chỉ là ước tính/tham khảo, không phải điểm thi chính thức</span></p></div>`).join("")}
+     <h2 style="margin-top:20px">Phần 3 · Điền từ vào chỗ trống</h2>
+     ${T.fills.map((f,fi)=>`<div style="margin:10px 0"><p><span class="en">${esc(f.q)}</span></p><input data-et-fill="${fi}" placeholder="Nhập từ còn thiếu…" style="max-width:320px" value="${esc(st.fills[fi]||"")}"></div>`).join("")}
+     <h2 style="margin-top:20px">Phần 4 · Từ vựng &amp; Ngữ pháp</h2>
+     ${T.vocab.map((q,qi)=>`<div style="margin:10px 0"><p><span class="en">${esc(q.q)}</span></p>${q.options.map((o,oi)=>`<button class="opt ${st.vocab[qi]===oi?"sel":""}" data-et-v="${qi}:${oi}">${String.fromCharCode(65+oi)}. ${esc(o)}</button>`).join("")}</div>`).join("")}
+     <div class="rowflex" style="margin-top:16px"><button class="btn-green" id="etSubmit" style="font-size:1.02rem">Nộp bài &amp; xem kết quả</button><button id="etSkip2">Vào học ngay (bỏ qua)</button></div>
+    </div>`;
+    appEl.querySelectorAll("[data-et-play]").forEach(b=>b.addEventListener("click",()=>{ const key=b.dataset.etPlay; const script=key.indexOf("img")===0? T.listenImgs[+key.slice(3)].script : T.listenMcq[+key.slice(2)].script; speak(script, +(st.rates[key]||0.9)); }));
+    appEl.querySelectorAll("[data-et-rate]").forEach(s=>s.addEventListener("change",()=>{ st.rates[s.dataset.etRate]=s.value; }));
+    appEl.querySelectorAll("[data-et-img]").forEach(b=>b.addEventListener("click",()=>{ const parts=b.dataset.etImg.split(":"); st.answers["img"+parts[0]]=+parts[1]; drawEntryTest(); }));
+    appEl.querySelectorAll("[data-et-lm]").forEach(b=>b.addEventListener("click",()=>{ const parts=b.dataset.etLm.split(":"); st.answers["lm"+parts[0]]=+parts[1]; drawEntryTest(); }));
+    appEl.querySelectorAll("[data-et-v]").forEach(b=>b.addEventListener("click",()=>{ const parts=b.dataset.etV.split(":"); st.vocab[+parts[0]]=+parts[1]; drawEntryTest(); }));
+    appEl.querySelectorAll("[data-et-fill]").forEach(inp=>inp.addEventListener("input",()=>{ st.fills[+inp.dataset.etFill]=inp.value; }));
+    appEl.querySelectorAll("[data-et-write]").forEach(ta=>ta.addEventListener("input",()=>{ const wi=+ta.dataset.etWrite; st.writings[wi]=ta.value; const el=document.getElementById("etwc"+wi); if(el) el.textContent=ta.value.trim()? ta.value.trim().split(/\s+/).filter(Boolean).length : 0; }));
+    document.getElementById("etSkip2").addEventListener("click",()=>{ const pp=myProg(); pp.entryTestSkipped=true; saveDB(); show("dashboard"); });
+    document.getElementById("etSubmit").addEventListener("click", gradeEntryTest);
+    return;
+  }
+  /* ---- stage: result ---- */
+  const r=st.result; if(!r){ entryState=etFreshState("intro"); drawEntryTest(); return; }
+  const barRow=(label,val,note)=>`<div><div class="rowflex"><span style="min-width:180px"><strong>${label}</strong></span><span class="spacer"></span><span>${val}%${note||""}</span></div><div class="bar"><i style="width:${val}%"></i></div></div>`;
+  appEl.innerHTML=`<div class="card">
+   <span class="pill blue">Kết quả bài kiểm tra đầu vào</span>
+   <h1 style="margin-top:8px">Tổng điểm: ${r.overall}/100</h1>
+   ${barRow("🎧 Nghe (Listening)", r.scores.listening)}
+   ${barRow("✍️ Viết (Writing)", r.scores.writing, " — ước tính tham khảo")}
+   ${barRow("🧩 Điền từ vào chỗ trống", r.scores.fill)}
+   ${barRow("📚 Từ vựng &amp; Ngữ pháp", r.scores.vocab)}
+   <div class="notice blue" style="margin-top:12px">Cấp độ bắt đầu được gợi ý: <span class="pill blue" style="font-size:1rem">${r.suggested} — ${LEVEL_NAMES[r.suggested]}</span><br>
+   <span class="small">Gợi ý chỉ được áp dụng khi bạn bấm xác nhận bên dưới. Điểm Viết là điểm ước tính/tham khảo theo rubric của hệ thống, không phải điểm thi chính thức.</span></div>
+   <h3>Đáp án &amp; giải thích</h3>
+   ${T.listenImgs.map((it,gi)=>`<div class="explain"><strong>Nghe ${gi+1} (chọn hình):</strong> <span class="en">${esc(it.script)}</span><br>${st.answers["img"+gi]===it.answer?"✓ Bạn chọn đúng hình "+String.fromCharCode(65+it.answer)+".":"✗ Hình đúng là "+String.fromCharCode(65+it.answer)+"; bạn chọn: "+(st.answers["img"+gi]!=null?String.fromCharCode(65+st.answers["img"+gi]):"chưa chọn")+"."} ${esc(it.explain)}</div>`).join("")}
+   ${T.listenMcq.map((it,qi)=>`<div class="explain"><strong>Nghe ${T.listenImgs.length+qi+1}:</strong> <span class="en">${esc(it.q)}</span><br>${st.answers["lm"+qi]===it.answer?"✓ Bạn trả lời đúng.":"✗ Đáp án đúng: <strong>"+esc(it.options[it.answer])+"</strong>."} ${esc(it.explain)}</div>`).join("")}
+   ${T.fills.map((f,fi)=>{ const norm=s=>String(s||"").trim().toLowerCase().replace(/[.!?,;:]$/,""); const ok=norm(st.fills[fi])===norm(f.a);
+     return `<div class="explain"><strong>Điền từ ${fi+1}:</strong> <span class="en">${esc(f.q)}</span><br>${ok?"✓ Bạn điền đúng: <strong>"+esc(f.a)+"</strong>.":"✗ Từ đúng là: <strong>"+esc(f.a)+"</strong>; bạn điền: "+esc(st.fills[fi]||"(trống)")+"."} ${esc(f.e)}</div>`; }).join("")}
+   ${T.vocab.map((q,qi)=>`<div class="explain"><strong>Từ vựng &amp; ngữ pháp ${qi+1}:</strong> <span class="en">${esc(q.q)}</span><br>${st.vocab[qi]===q.answer?"✓ Bạn trả lời đúng.":"✗ Đáp án đúng: <strong>"+esc(q.options[q.answer])+"</strong>."} ${esc(q.explain)}</div>`).join("")}
+   <h3>Nhận xét phần Viết (điểm ước tính tham khảo)</h3>
+   ${T.writings.map((w,wi)=>{ const a=analyzeWriting(String(st.writings[wi]||""), w.min);
+     return `<div class="explain"><strong>Đề viết ${wi+1}:</strong> ${a.avg}/10 (ước tính). Rubric: ${Object.entries(a.rubric).map(([k,v])=>k+" "+v+"/10").join(" · ")}.${a.issues.length? "<br>Gợi ý sửa: "+a.issues.map(x=>esc(x)).join(" ") : "<br>Không phát hiện lỗi bề mặt rõ ràng — hãy vẫn tự đọc lại bài trước khi nộp ở kỳ thi thật."}</div>`; }).join("")}
+   <div class="rowflex" style="margin-top:12px"><button class="btn-primary" id="etApply">✓ Xác nhận — bắt đầu học ở cấp ${r.suggested}</button>
+   <button id="etGoDash">Vào học ngay (giữ lộ trình hiện tại)</button>
+   <button id="etRedo">Làm lại bài kiểm tra</button></div>
+  </div>`;
+  document.getElementById("etApply").addEventListener("click",()=>{ const pp=myProg(); pp.suggestedLevel=r.suggested; saveDB(); toast("Đã áp dụng cấp độ gợi ý "+r.suggested+". Chúc bạn học tốt!"); lessonFilter=r.suggested; show("lessons"); });
+  document.getElementById("etGoDash").addEventListener("click",()=>show("dashboard"));
+  document.getElementById("etRedo").addEventListener("click",()=>{ entryState=etFreshState("test"); drawEntryTest(); window.scrollTo({top:0}); });
+}
+function gradeEntryTest(){
+  const st=entryState, T=ENTRY_TEST, p=myProg(); if(!st||!p) return;
+  const missing=[];
+  T.listenImgs.forEach((it,gi)=>{ if(st.answers["img"+gi]==null) missing.push("Câu nghe "+(gi+1)); });
+  T.listenMcq.forEach((it,qi)=>{ if(st.answers["lm"+qi]==null) missing.push("Câu nghe "+(T.listenImgs.length+qi+1)); });
+  T.writings.forEach((w,wi)=>{ const t=String(st.writings[wi]||""); if(t.trim().split(/\s+/).filter(Boolean).length<10) missing.push("Đề viết "+(wi+1)+" (cần ít nhất 10 từ)"); });
+  T.fills.forEach((f,fi)=>{ if(!String(st.fills[fi]||"").trim()) missing.push("Câu điền từ "+(fi+1)); });
+  T.vocab.forEach((q,qi)=>{ if(st.vocab[qi]==null) missing.push("Câu từ vựng & ngữ pháp "+(qi+1)); });
+  if(missing.length){ toast("Hãy hoàn thành các phần còn thiếu: "+missing.join(", ")); return; }
+  const norm=s=>String(s||"").trim().toLowerCase().replace(/[.!?,;:]$/,"");
+  let lRight=0; T.listenImgs.forEach((it,gi)=>{ if(st.answers["img"+gi]===it.answer) lRight++; });
+  T.listenMcq.forEach((it,qi)=>{ if(st.answers["lm"+qi]===it.answer) lRight++; });
+  const lTotal=T.listenImgs.length+T.listenMcq.length;
+  let fRight=0; T.fills.forEach((f,fi)=>{ if(norm(st.fills[fi])===norm(f.a)) fRight++; });
+  let vRight=0; T.vocab.forEach((q,qi)=>{ if(st.vocab[qi]===q.answer) vRight++; });
+  const wAnalyses=T.writings.map((w,wi)=>analyzeWriting(String(st.writings[wi]||""), w.min));
+  const wAvg=wAnalyses.reduce((a,x)=>a+x.avg,0)/wAnalyses.length;
+  const scores={ listening:Math.round(100*lRight/lTotal), writing:Math.round(wAvg*10), fill:Math.round(100*fRight/T.fills.length), vocab:Math.round(100*vRight/T.vocab.length) };
+  const overall=Math.round((scores.listening+scores.writing+scores.fill+scores.vocab)/4);
+  const result={date:todayStr(), scores:scores, overall:overall, suggested:etSuggested(overall)};
+  if(!Array.isArray(p.entryTests)) p.entryTests=[];
+  p.entryTests.push(result); p.entryTestDone=true; saveDB();
+  st.result=result; st.stage="result"; drawEntryTest(); window.scrollTo({top:0});
+}
+
 /* ================= BÀI HỌC ================= */
 let lessonFilter = "ALL", lessonSkillFilter = "ALL", lessonTypeFilter = "ALL", lessonSearch = "";
 function renderLessons(){
@@ -1269,7 +1790,7 @@ function renderLessons(){
     && (!q || l.title.toLowerCase().includes(q) || l.objective.toLowerCase().includes(q) || (l.vocab||[]).some(v=>v.w.toLowerCase().includes(q)));
   const totalShown = allLessons().filter(matchLesson).length;
   appEl.innerHTML = `<h1>Bài học (${allLessons().length} bài)</h1>
-  <p class="muted">Mỗi bài gồm mục tiêu, ít nhất 5 từ vựng (IPA + nghĩa tiếng Việt + ví dụ), ngữ pháp trọng tâm và <strong>ít nhất 6 bài tập thuộc nhiều dạng khác nhau</strong> — trắc nghiệm, điền từ, đúng/sai, chọn từ theo nghĩa, nối từ, sắp xếp từ/câu, nghe & điền từ bằng TTS, đọc hiểu, sửa lỗi, viết (chấm ước lượng) và nói ghi âm. Hoàn thành khi đạt từ 2/3 tổng điểm bài tập của bài.</p>
+  <p class="muted">Mỗi bài gồm mục tiêu, ít nhất 5 từ vựng (IPA + nghĩa tiếng Việt + ví dụ), ngữ pháp trọng tâm và <strong>ít nhất 6 bài tập thuộc nhiều dạng khác nhau</strong> — trắc nghiệm, nghe & chọn hình kiểu TOEIC Part 1, điền từ, đúng/sai, chọn từ theo nghĩa, nối từ, sắp xếp từ/câu, nghe & điền từ bằng TTS, đọc hiểu, sửa lỗi, viết (chấm ước lượng) và nói ghi âm. Hoàn thành khi đạt từ 2/3 tổng điểm bài tập của bài.</p>
   <div class="card" style="padding:12px 14px"><div class="rowflex">
    <span><label style="margin:0 0 .25rem">Tìm kiếm bài học</label><input class="inline" id="lessonSearchInp" type="search" placeholder="Tên bài, chủ đề hoặc từ vựng…" value="${esc(lessonSearch)}" style="min-width:210px"></span>
    <span><label style="margin:0 0 .25rem">Cấp độ</label><select class="inline" id="lessonFilterSel">${["ALL"].concat(LEVELS).map(l=>`<option value="${l}" ${lessonFilter===l?"selected":""}>${l==="ALL"?"Tất cả cấp độ":l}</option>`).join("")}</select></span>
@@ -1303,13 +1824,14 @@ let quizState = {};
 function openLesson(id){
   const l = allLessons().find(x=>x.id===id); if(!l) return;
   if(levelStatus(l.level)==="lock"){ toast("Cấp độ này đang khóa. Hãy hoàn thành cấp trước và đạt kiểm tra cuối cấp."); return; }
-  quizState[id] = {answers:{}, graded:false, recUrls:{}, transcripts:{}};
+  quizState[id] = {answers:{}, graded:false, recUrls:{}, transcripts:{}, rates:{}};
   const p=myProg();
   show("lessons");
   appEl.innerHTML = `<button class="btn-sm" data-goto="lessons">← Tất cả bài học</button>
   <div class="card"><div class="rowflex"><span class="pill blue">${l.level}</span><span class="pill blue">${SKILLS[l.skill]}</span><span class="pill gold">+${l.xp} XP khi hoàn thành</span></div>
    <h1 style="margin-top:6px" class="en">${esc(l.title)}</h1>
    <p><strong>Mục tiêu bài học:</strong> ${esc(l.objective)}</p>
+   ${l.img?`<div style="margin:10px 0"><img class="heroimg" src="${esc(l.img.src)}" alt="${esc(l.img.en)} — ${esc(l.img.vi)}" loading="lazy" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='flex';"><span class="imgfallback" style="display:none;min-height:120px">🖼 ${esc(l.img.vi)}<br><span class="en">${esc(l.img.en)}</span></span><p class="small muted" style="margin-top:6px">Ảnh minh hoạ: <span class="en">${esc(l.img.en)}</span> — ${esc(l.img.vi)} (nguồn ảnh: Unsplash).</p></div>`:""}
    <h3>📚 Từ vựng mới</h3>
    <table><tr><th>Word</th><th>IPA</th><th>Loại từ</th><th>Nghĩa tiếng Việt</th><th>Ví dụ</th><th></th></tr>
    ${l.vocab.map((v,i)=>`<tr><td><strong class="en">${esc(v.w)}</strong> <button class="btn-sm" data-say="${esc(v.w)}" title="Nghe phát âm">🔊</button></td><td class="en">${esc(v.ipa)}</td><td>${esc(v.pos)}</td><td>${esc(v.vi)}</td><td class="en">${esc(v.ex)}</td>
@@ -1331,7 +1853,7 @@ function openLesson(id){
   window.scrollTo({top:0});
 }
 function exAttempted(e, ans, st, i){
-  if(e.type==="mcq"||e.type==="meaning"||e.type==="error"||e.type==="reading"||e.type==="truefalse") return ans!=null;
+  if(e.type==="mcq"||e.type==="listen_img"||e.type==="meaning"||e.type==="error"||e.type==="reading"||e.type==="truefalse") return ans!=null;
   if(e.type==="fill"||e.type==="listen_fill") return !!(ans&&String(ans).trim());
   if(e.type==="matching") return !!ans && e.pairs.every((p,li)=>ans[li]!=null&&ans[li]!=="");
   if(e.type==="order_words") return !!ans && ans.length===e.words.length;
@@ -1342,7 +1864,7 @@ function exAttempted(e, ans, st, i){
 }
 function gradeOne(e, ans, st, i){
   const norm=s=>String(s||"").trim().toLowerCase().replace(/[.!?,;:]$/,"");
-  if(e.type==="mcq"||e.type==="meaning"||e.type==="error"||e.type==="reading") return {score: ans===e.answer?1:0, note:""};
+  if(e.type==="mcq"||e.type==="listen_img"||e.type==="meaning"||e.type==="error"||e.type==="reading") return {score: ans===e.answer?1:0, note:""};
   if(e.type==="truefalse") return {score: ans===e.answer?1:0, note:""};
   if(e.type==="fill"||e.type==="listen_fill") return {score: norm(ans)===norm(e.answer)?1:0, note:""};
   if(e.type==="matching"){ let c=0; e.pairs.forEach((p,li)=>{ if(ans&&+ans[li]===li) c++; }); return {score: Math.round(10*c/e.pairs.length)/10, note:"Đúng "+c+"/"+e.pairs.length+" cặp. "}; }
@@ -1369,6 +1891,14 @@ function drawLessonExercises(l){
       body=`<p><span class="en">${esc(e.q)}</span></p><input data-exfill="${i}" placeholder="Nhập từ còn thiếu…" style="max-width:340px" value="${esc(ans||"")}" ${st.graded?"disabled":""}>`;
     } else if(e.type==="listen_fill"){
       body=`<div class="rowflex"><button class="btn-sm btn-primary" data-exlisten="${i}">🔊 Nghe câu (TTS)</button><span class="small muted">Nghe rồi điền đúng từ bạn nghe thấy.</span></div><p><span class="en">${esc(e.sentence)}</span></p><input data-exfill="${i}" placeholder="Nhập từ bạn nghe thấy…" style="max-width:340px" value="${esc(ans||"")}" ${st.graded?"disabled":""}>`;
+    } else if(e.type==="listen_img"){
+      const rate=(st.rates&&st.rates[i])||"0.9";
+      body=`<div class="rowflex"><button class="btn-sm btn-primary" data-listen-img="${i}">🔊 Nghe câu mô tả</button>
+      <label style="margin:0">Tốc độ <select class="inline" data-rate-img="${i}">${["0.75","0.9","1","1.15"].map(r=>`<option value="${r}" ${rate===r?"selected":""}>${r}×</option>`).join("")}</select></label>
+      <span class="small muted">Nghe câu mô tả rồi chọn hình đúng nhất — kiểu TOEIC Part 1. Transcript chỉ hiện sau khi chấm.</span></div>
+      ${ttsOK()?"":'<div class="notice red small" style="margin:8px 0">Trình duyệt này không hỗ trợ giọng đọc (TTS) nên không phát được audio. Hãy đọc transcript bên dưới để vẫn làm được bài.</div>'}
+      <div class="imggrid">${e.images.map((im,ii)=>imgOptHtml(e,i,ii,st)).join("")}</div>
+      ${st.graded||!ttsOK()?`<div class="explain"><strong>Transcript:</strong> <span class="en">${esc(e.script)}</span></div>`:""}`;
     } else if(e.type==="truefalse"){
       const tfBtn=(val,label)=>{ let cls="opt"; if(st.graded){ if(val===e.answer) cls+=" right"; else if(ans===val) cls+=" wrong"; } else if(ans===val) cls+=" sel";
         return `<button class="${cls}" style="display:inline-block;width:auto;margin-right:8px" data-extf="${i}:${val?1:0}" ${st.graded?"disabled":""}>${label}</button>`; };
@@ -1409,6 +1939,9 @@ function drawLessonExercises(l){
   box.querySelectorAll("[data-extf]").forEach(b=>b.addEventListener("click",()=>{ const [i,v]=b.dataset.extf.split(":"); st.answers[+i]=(v==="1"); drawLessonExercises(l); }));
   box.querySelectorAll("[data-exfill]").forEach(inp=>inp.addEventListener("input",()=>{ st.answers[+inp.dataset.exfill]=inp.value; }));
   box.querySelectorAll("[data-exlisten]").forEach(b=>b.addEventListener("click",()=>{ const e=exs[+b.dataset.exlisten]; speak(e.script,0.95); }));
+  box.querySelectorAll("[data-listen-img]").forEach(b=>b.addEventListener("click",()=>{ const i=+b.dataset.listenImg; const sel=box.querySelector(`[data-rate-img="${i}"]`); speak(exs[i].script, sel? +sel.value : 0.9); }));
+  box.querySelectorAll("[data-rate-img]").forEach(s=>s.addEventListener("change",()=>{ if(!st.rates) st.rates={}; st.rates[+s.dataset.rateImg]=s.value; }));
+  box.querySelectorAll("[data-img-opt]").forEach(b=>b.addEventListener("click",()=>{ const [i,ii]=b.dataset.imgOpt.split(":"); st.answers[+i]=+ii; drawLessonExercises(l); }));
   box.querySelectorAll("[data-exmodel]").forEach(b=>b.addEventListener("click",()=>{ const e=exs[+b.dataset.exmodel]; speak(e.target,0.92); }));
   box.querySelectorAll("[data-exmatch]").forEach(sel=>sel.addEventListener("change",()=>{ const [i,li]=sel.dataset.exmatch.split(":"); if(!st.answers[+i]) st.answers[+i]={}; st.answers[+i][+li]=sel.value; }));
   box.querySelectorAll("[data-exword]").forEach(b=>b.addEventListener("click",()=>{ const [i,wi]=b.dataset.exword.split(":"); if(!st.answers[+i]) st.answers[+i]=[]; st.answers[+i].push(+wi); drawLessonExercises(l); }));
@@ -1450,6 +1983,7 @@ function drawLessonExercises(l){
     let html;
     if(ratio>=2/3 && !p.completedLessons[l.id]){
       p.completedLessons[l.id]=true; addStudy(6); p.activity.lesson=true; addXP(l.xp); saveDB();
+      syncProgressToSupabase(l.id, Math.round(100*total/exs.length));
       html=`<div class="notice blue">🎉 Bạn đạt <strong>${total}/${exs.length}</strong> điểm bài tập — hoàn thành bài học và nhận <strong>+${l.xp} XP</strong>!</div>`;
     } else if(ratio>=2/3){
       addStudy(4); saveDB(); html=`<div class="notice blue">Bạn đạt <strong>${total}/${exs.length}</strong> điểm bài tập. Bài này đã hoàn thành trước đó nên XP không cộng lại.</div>`;
@@ -1458,7 +1992,7 @@ function drawLessonExercises(l){
     }
     drawLessonExercises(l); const r2=document.getElementById("lessonResult"); if(r2) r2.innerHTML=html;
   });
-  const rt=document.getElementById("lqRetry"); if(rt) rt.addEventListener("click",()=>{ quizState[l.id]={answers:{},graded:false,recUrls:{},transcripts:{}}; drawLessonExercises(l); document.getElementById("lessonResult").innerHTML=""; });
+  const rt=document.getElementById("lqRetry"); if(rt) rt.addEventListener("click",()=>{ quizState[l.id]={answers:{},graded:false,recUrls:{},transcripts:{},rates:{}}; drawLessonExercises(l); document.getElementById("lessonResult").innerHTML=""; });
 }
 
 /* ================= 4 KỸ NĂNG ================= */
@@ -1967,11 +2501,11 @@ function renderProfile(){
   appEl.innerHTML=`<h1>Hồ sơ người học</h1>
   <div class="grid grid2">
    <div class="card"><h3>Thông tin & mục tiêu</h3>
-    <p><strong>Họ tên:</strong> ${esc(u.name)}</p><p><strong>Email (cục bộ):</strong> ${esc(u.email)}</p><p class="small muted">Tài khoản tạo ngày ${esc(u.created)} — chỉ tồn tại trên trình duyệt này.</p>
+    <p><strong>Họ tên:</strong> ${esc(u.name)}</p><p><strong>Email:</strong> ${esc(u.email)}</p><p class="small muted">Tài khoản tạo ngày ${esc(u.created)}. ${sbUser ? "Bạn đang đăng nhập bằng <strong>Supabase Auth</strong> — email & mật khẩu do Supabase quản lý (đổi mật khẩu trong Supabase hoặc qua email đặt lại mật khẩu); tiến độ học vẫn lưu trên trình duyệt này." : "Tài khoản cục bộ trên trình duyệt này (chưa qua Supabase Auth)."}</p>
     <label>Mục tiêu TOEIC</label><select id="pfGoal">${["450","600","750","850","900+"].map(g=>`<option ${u.goal===g?"selected":""}>${g}</option>`).join("")}</select>
     <label>Thời gian học mỗi ngày (phút)</label><select id="pfDaily">${[15,30,45,60].map(m=>`<option value="${m}" ${u.dailyMins===m?"selected":""}>${m} phút</option>`).join("")}</select>
     <label>Kỹ năng ưu tiên</label><select id="pfPriority">${Object.entries(SKILLS).map(([k,v])=>`<option value="${k}" ${u.priority===k?"selected":""}>${v}</option>`).join("")}</select>
-    <label>Đổi mật khẩu cục bộ (để trống nếu không đổi)</label><input type="password" id="pfPass" placeholder="Mật khẩu mới (không dùng mật khẩu thật)">
+    ${sbUser ? "" : '<label>Đổi mật khẩu cục bộ (để trống nếu không đổi — chỉ áp dụng cho tài khoản cục bộ)</label><input type="password" id="pfPass" placeholder="Mật khẩu mới">'}
     <div style="margin-top:12px"><button class="btn-primary" id="pfSave">Lưu hồ sơ</button></div>
     <p class="small muted" style="margin-top:10px">App không cam kết đạt một điểm TOEIC cụ thể sau một khoảng thời gian cố định — tiến độ phụ thuộc vào việc học đều đặn của bạn.</p>
    </div>
@@ -1983,14 +2517,14 @@ function renderProfile(){
     <div class="rowflex"><button class="btn-sm" id="pfExport">⬇ Xuất dữ liệu (JSON)</button>
     <button class="btn-sm" id="pfDownloadHtml">⬇ Tải file HTML của app</button>
     <label class="btn-sm" style="border:1px solid var(--line);border-radius:8px;padding:.32rem .65rem;cursor:pointer;margin:0">⬆ Nhập dữ liệu (JSON)<input type="file" id="pfImport" accept=".json" class="hidden"></label></div>
-    <p class="small muted">Vì dữ liệu chỉ nằm trong localStorage của trình duyệt này, hãy xuất JSON định kỳ để sao lưu. “Tải file HTML” tải chính mã nguồn 1 file của app để bạn mở trực tiếp hoặc sửa code.</p>
+    <p class="small muted">Tiến độ học nằm trong localStorage của trình duyệt này (tài khoản đăng nhập thì nằm trên Supabase), hãy xuất JSON định kỳ để sao lưu. “Tải file HTML” tải chính mã nguồn 1 file của app để bạn mở trực tiếp hoặc sửa code.</p>
     <h3 style="margin-top:14px">Vùng nguy hiểm</h3>
     <button class="btn-sm btn-danger" id="pfWipe">Xóa toàn bộ dữ liệu của tôi trên trình duyệt này</button>
    </div>
   </div>`;
   document.getElementById("pfSave").addEventListener("click",()=>{
     u.goal=document.getElementById("pfGoal").value; u.dailyMins=+document.getElementById("pfDaily").value; u.priority=document.getElementById("pfPriority").value;
-    const np=document.getElementById("pfPass").value; if(np) u.passHash=hashPw(np);
+    const pfPassEl=document.getElementById("pfPass"); if(pfPassEl && pfPassEl.value) u.passHash=hashPw(pfPassEl.value);
     saveDB(); toast("Đã lưu hồ sơ trên trình duyệt này.");
   });
   document.getElementById("pfExport").addEventListener("click",()=>{
@@ -2010,7 +2544,8 @@ function renderProfile(){
     r.readAsText(f);
   });
   document.getElementById("pfWipe").addEventListener("click",()=>{
-    if(document.getElementById("pfWipe").dataset.confirm==="1"){ delete DB.users[u.email]; DB.session=null; saveDB(); location.reload(); }
+    if(document.getElementById("pfWipe").dataset.confirm==="1"){ delete DB.users[u.email]; DB.session=null; saveDB();
+      if(sbClient){ sbClient.auth.signOut().catch(()=>{}).finally(()=>location.reload()); } else location.reload(); }
     else { const b=document.getElementById("pfWipe"); b.dataset.confirm="1"; b.textContent="Bấm lần nữa để XÁC NHẬN xóa toàn bộ dữ liệu"; }
   });
 }
@@ -2023,7 +2558,7 @@ function renderAdmin(){
   const totalFinal=users.reduce((a,x)=>a+Object.values(x.progress.finalResults).filter(r=>r.passed).length,0);
   const custom=p.adminLessons||[];
   appEl.innerHTML=`<h1>Quản trị cục bộ</h1>
-  <div class="notice">Khu vực quản trị này <strong>chỉ áp dụng trên trình duyệt này</strong>: bài học thêm/sửa/xóa được lưu trong localStorage của trình duyệt hiện tại, không đồng bộ cho người dùng hay thiết bị khác.</div>
+  <div class="notice">Phần quản trị chỉ hiển thị khi tài khoản của bạn có <strong>role “admin”</strong> trong bảng <strong>public.profiles</strong> trên Supabase. Nội dung quản trị ở đây <strong>chỉ áp dụng trên trình duyệt này</strong>: bài học thêm/sửa/xóa được lưu trong localStorage của trình duyệt hiện tại, không đồng bộ cho người dùng hay thiết bị khác; thống kê bên dưới cũng chỉ tính các tài khoản từng học trên trình duyệt này.</div>
   <div class="grid grid3">
     <div class="card stat"><div class="num">${users.length}</div><div class="lbl">Tài khoản trên trình duyệt này</div></div>
     <div class="card stat"><div class="num">${totalDone}</div><div class="lbl">Tổng lượt hoàn thành bài học</div></div>
@@ -2088,32 +2623,56 @@ function renderAdmin(){
   }));
 }
 
-/* ================= KHỞI TẠO ================= */
-if(me()) enterApp();
+/* ================= KHỞI TẠO =================
+   Việc vào app được quyết định ở khối script Supabase cuối file:
+   còn phiên Supabase → vào thẳng Dashboard; chưa có phiên → hiện form đăng nhập. */
 </script>
+
+<!-- ================================================================
+     SUPABASE AUTH — BƯỚC 6
+     1) Dán Publishable key của bạn vào hằng số SUPABASE_PUBLISHABLE_KEY
+        bên dưới (key bắt đầu bằng sb_publishable_, lấy tại Supabase:
+        Settings → API Keys → mục “Publishable key”).
+     2) TUYỆT ĐỐI KHÔNG dán Secret key / service_role key vào file này —
+        key đó chỉ dùng ở máy chủ, lộ ra là người khác có toàn quyền
+        với dự án Supabase của bạn.
+     3) Tải lại file index.html này lên GitHub Pages như các bước trước.
+================================================================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const supabaseClient = supabase.createClient(
-    "https://kwplzaxfcgkxvswqffeg.supabase.co",
-    "sb_publishable_mNPrrxtOSRvXqt0g5S4R1g_hMcDrpNJ"
-  );
+const SUPABASE_URL = "https://kwplzaxfcgkxvswqffeg.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mNPrrxtOSRvXqt0g5S4R1g_hMcDrpNJ";
 
-  async function dangKy(email, matKhau) {
-    return await supabaseClient.auth.signUp({ email, password: matKhau });
+try{
+  if(window.supabase && SUPABASE_PUBLISHABLE_KEY.indexOf("sb_publishable_")===0){
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   }
+}catch(e){ sbClient = null; }
 
-  async function dangNhap(email, matKhau) {
-    return await supabaseClient.auth.signInWithPassword({ email, password: matKhau });
-  }
+/* Chưa dán key (hoặc không tải được thư viện) → báo rõ ngay trên form đăng nhập. */
+if(!sbClient){
+  const warn=document.getElementById("sbKeyWarning");
+  if(warn) warn.classList.remove("hidden");
+}
 
-  async function dangXuat() {
-    return await supabaseClient.auth.signOut();
+async function bootAuth(){
+  if(sbClient){
+    sbClient.auth.onAuthStateChange(function(event, session){
+      if(session && session.user) enterWithSupabase(session.user);
+    });
+    try{
+      const res = await sbClient.auth.getSession();
+      if(res && res.data && res.data.session && res.data.session.user){
+        await enterWithSupabase(res.data.session.user);
+        return;
+      }
+    }catch(e){ /* không có phiên Supabase → hiện form đăng nhập */ }
+    return; /* không còn phiên Supabase → giữ form đăng nhập */
   }
-
-  async function layTaiKhoanHienTai() {
-    const { data } = await supabaseClient.auth.getSession();
-    return data.session?.user ?? null;
-  }
+  /* Chưa nối được Supabase (chưa dán key / thư viện không tải được) → giữ form đăng nhập,
+     cảnh báo thiếu key đã hiện sẵn phía trên form. */
+}
+bootAuth();
 </script>
 </body>
 </html>
