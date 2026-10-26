@@ -153,6 +153,31 @@ input[type=range]{padding:0}
 .imgfallback{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:132px;background:var(--bg2);border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:.85rem;color:var(--muted);text-align:center}
 .imglabel{display:block;margin-top:5px;font-weight:700;font-size:.85rem}
 .heroimg{width:100%;max-height:250px;object-fit:cover;border-radius:10px;display:block}
+.tree-stage{border-left:4px solid var(--cobalt)}
+.tree-week{margin:10px 0 4px;font-weight:700;color:var(--navy)}
+.tlesson{display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin:6px 0;background:var(--card);flex-wrap:wrap}
+.tlesson .grow{flex:1;min-width:180px}
+.tagchip{display:inline-block;padding:.08rem .5rem;border-radius:99px;font-size:.72rem;font-weight:700;background:var(--bg2);color:var(--muted);margin:0 4px 4px 0}
+.timeline-wrap{margin:14px 0}
+.timeline-track{display:flex;justify-content:space-between;font-weight:700;color:var(--muted);font-size:.85rem;margin-top:4px}
+.scenebox{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--bg2);margin:10px 0}
+.kw{background:var(--gold-soft);border:1px solid var(--gold);border-radius:6px;padding:0 .35rem;font-weight:700;cursor:pointer}
+.kw.explored{background:var(--green-soft);border-color:var(--green)}
+.office{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+@media(max-width:520px){.office{grid-template-columns:1fr}}
+.zone{border:2px dashed var(--line);border-radius:12px;padding:12px;min-height:86px;background:var(--card);cursor:pointer;text-align:center}
+.zone.over{border-color:var(--orange);background:var(--orange-soft)}
+.zone.right{border-color:var(--green);background:var(--green-soft);border-style:solid}
+.zone.wrongshake{border-color:var(--red);background:var(--red-soft)}
+.objitem{display:inline-block;border:1px solid var(--cobalt);background:var(--cobalt-soft);color:var(--cobalt);border-radius:99px;padding:.35rem .8rem;font-weight:700;margin:4px;cursor:pointer}
+.objitem.sel{outline:3px solid var(--orange)}
+.objitem.placed{opacity:.45;pointer-events:none}
+.clickobj{border:2px solid var(--line);border-radius:12px;padding:12px;background:var(--card);cursor:pointer;text-align:center;font-weight:700}
+.clickobj.right{border-color:var(--green);background:var(--green-soft)}
+.clickobj.wrongshake{border-color:var(--red);background:var(--red-soft)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.shake{animation:shake .35s ease 2}
+.pathline{font-weight:700;color:var(--green)}
 </style>
 </head>
 <body>
@@ -164,6 +189,7 @@ input[type=range]{padding:0}
     <button data-view="lessons">Bài học</button>
     <button data-view="skills">4 kỹ năng</button>
     <button data-view="toeic">TOEIC</button>
+    <button data-view="toeicpath">Lộ trình TOEIC 0-900+</button>
     <button data-view="finaltest">Kiểm tra cuối cấp</button>
     <button data-view="vocab">Sổ tay từ vựng</button>
     <button data-view="profile">Hồ sơ</button>
@@ -1251,12 +1277,12 @@ const FINAL_BANK = {
 function blankProgress(startLevel){
   return { xp:0, studyMins:0, studyDates:[], lastStudyDay:"", streak:0, placementDone:false, suggestedLevel:startLevel||"A1",
     completedLessons:{}, lessonScores:{}, skillDone:{listening:0,reading:0,writing:0,speaking:0}, skillRight:{listening:0,reading:0,writing:0,speaking:0},
-    skillTotal:{listening:0,reading:0,writing:0,speaking:0}, vocab:[], finalResults:{}, toeicHistory:[], activityDay:"", activity:{lesson:false,listening:false,flash:false},
+    skillTotal:{listening:0,reading:0,writing:0,speaking:0}, vocab:[], finalResults:{}, toeicHistory:[], toeicDone:{}, toeicAssess:{}, tagStats:{}, activityDay:"", activity:{lesson:false,listening:false,flash:false},
     readingStats:[], customLessons:[], adminLessons:null, entryTests:[], entryTestDone:false, entryTestSkipped:false, dataVersion:2 };
 }
 function loadDB(){ try{ const d = JSON.parse(localStorage.getItem(DB_KEY)); if(d && d.users) return d; }catch(e){} return {users:{}, session:null}; }
 let DB = loadDB();
-(function migrateDB(){ let changed=false; Object.values(DB.users||{}).forEach(u=>{ const p=u&&u.progress; if(!p) return; if(!p.dataVersion){ p.dataVersion=2; changed=true; } ["completedLessons","lessonScores","skillDone","skillRight","skillTotal","finalResults"].forEach(k=>{ if(!p[k]) p[k]={}; }); if(!Array.isArray(p.vocab)) p.vocab=[]; if(!Array.isArray(p.studyDates)) p.studyDates=[]; if(!Array.isArray(p.toeicHistory)) p.toeicHistory=[]; if(typeof p.xp!=="number") p.xp=0; if(typeof p.streak!=="number") p.streak=0; }); if(changed){ try{ saveDB(); }catch(e){} } })();
+(function migrateDB(){ let changed=false; Object.values(DB.users||{}).forEach(u=>{ const p=u&&u.progress; if(!p) return; if(!p.dataVersion){ p.dataVersion=2; changed=true; } ["completedLessons","lessonScores","skillDone","skillRight","skillTotal","finalResults"].forEach(k=>{ if(!p[k]) p[k]={}; }); if(!Array.isArray(p.vocab)) p.vocab=[]; if(!Array.isArray(p.studyDates)) p.studyDates=[]; if(!Array.isArray(p.toeicHistory)) p.toeicHistory=[]; if(typeof p.xp!=="number") p.xp=0; if(typeof p.streak!=="number") p.streak=0; if(!p.toeicDone) p.toeicDone={}; if(!p.toeicAssess) p.toeicAssess={}; if(!p.tagStats) p.tagStats={}; }); if(changed){ try{ saveDB(); }catch(e){} } })();
 function saveDB(){ localStorage.setItem(DB_KEY, JSON.stringify(DB)); }
 function me(){ return DB.session ? DB.users[DB.session] : null; }
 function myProg(){ const u = me(); return u ? u.progress : null; }
@@ -1338,7 +1364,7 @@ function show(view){
   if(view==="admin" && sbRole!=="admin"){ toast("Phần quản trị chỉ mở cho tài khoản có role admin trên Supabase."); view="dashboard"; }
   currentView = view;
   document.querySelectorAll("#mainNav button").forEach(b=>b.classList.toggle("active", b.dataset.view===view));
-  const r = {dashboard:renderDashboard, path:renderPath, lessons:renderLessons, skills:renderSkills, toeic:renderToeic, finaltest:renderFinalHome, vocab:renderVocab, profile:renderProfile, admin:renderAdmin}[view];
+  const r = {dashboard:renderDashboard, path:renderPath, lessons:renderLessons, skills:renderSkills, toeic:renderToeic, toeicpath:renderToeicPath, finaltest:renderFinalHome, vocab:renderVocab, profile:renderProfile, admin:renderAdmin}[view];
   if(r) r();
   window.scrollTo({top:0});
 }
@@ -1491,7 +1517,7 @@ function weakestSkill(){ const p=myProg(); let w="listening", wv=Infinity;
   return w; }
 function renderDashboard(){
   const u=me(), p=u.progress;
-  const doneCount = Object.keys(p.completedLessons).length, totalLessons = allLessons().length;
+  const doneCount = Object.keys(p.completedLessons).length + Object.keys(p.toeicDone||{}).length, totalLessons = allLessons().length + TOEIC_LESSONS.length;
   const w = weakestSkill();
   const lastEt=(p.entryTests||[])[(p.entryTests||[]).length-1];
   const wLesson = allLessons().find(l=>l.skill===w && !p.completedLessons[l.id] && levelStatus(l.level)!=="lock")
@@ -1517,6 +1543,11 @@ function renderDashboard(){
    ${lastEt?`<p class="small">Lần làm gần nhất: <strong>${esc(lastEt.date)}</strong> · Tổng điểm <strong>${lastEt.overall}/100</strong> · Nghe ${lastEt.scores.listening}% · Viết ${lastEt.scores.writing}% (ước tính tham khảo) · Điền từ ${lastEt.scores.fill}% · Từ vựng &amp; ngữ pháp ${lastEt.scores.vocab}% · Cấp độ được gợi ý: <span class="pill blue">${lastEt.suggested} — ${LEVEL_NAMES[lastEt.suggested]}</span></p>`
      :'<p class="small muted">Bạn chưa làm bài kiểm tra đầu vào mới. Bài test có phần Nghe chọn hình kiểu TOEIC Part 1, 2 đề Viết ngắn (điểm ước tính tham khảo), Điền từ và Từ vựng &amp; Ngữ pháp — cuối bài sẽ gợi ý cấp độ bắt đầu A1–C2 cho bạn xác nhận.</p>'}
    <button class="btn-sm btn-primary" id="dashEntryTest">${lastEt?"Làm lại bài kiểm tra đầu vào":"Làm bài kiểm tra đầu vào"}</button></div>
+   <div class="card"><h3>🗂️ Lộ trình TOEIC 0-900+ (mới)</h3>
+   <p class="small">Lộ trình riêng, tách biệt với lộ trình CEFR: 4 giai đoạn (0-450 Foundation · 450-650 Breakthrough · 650-800 Intermediate · 800-900+ Advanced), 24 bài học ngắn kiểu Duolingo — mỗi bài 1 chủ đề riêng, cuối mỗi giai đoạn có 1 Assessment Test mô phỏng format TOEIC (điểm ước tính tham khảo, không phải điểm ETS chính thức).</p>
+   <p class="small">Đã hoàn thành: <strong>${Object.keys(p.toeicDone||{}).length}/24 bài TOEIC</strong> · Assessment đã đạt: <strong>${Object.values(p.toeicAssess||{}).filter(a=>a.passed).length}/4</strong></p>
+   <button class="btn-sm btn-primary" data-goto="toeicpath">Mở Lộ trình TOEIC 0-900+</button></div>
+   ${toeicGapHtml()}
    <div class="grid grid2">
      <div class="card"><h3>Tiến độ 4 kỹ năng (độ chính xác từ bài đã làm)</h3>
        ${Object.keys(SKILLS).map(s=>`<div><div class="rowflex"><span style="min-width:90px"><strong>${SKILLS[s]}</strong></span><span class="spacer"></span><span class="small muted">${p.skillTotal[s]? skillPct(s)+"% · "+p.skillDone[s]+" hoạt động" : "chưa có dữ liệu"}</span></div><div class="bar ${s===w?"orange":""}"><i style="width:${p.skillTotal[s]?skillPct(s):0}%"></i></div></div>`).join("")}
@@ -2623,6 +2654,675 @@ function renderAdmin(){
   }));
 }
 
+
+/* ================= LỘ TRÌNH TOEIC 0-900+ (MỚI) =================
+   Lộ trình riêng, tách biệt với lộ trình CEFR A1–C2 ở trên. Hiển thị dạng cây
+   tuyến tính Giai đoạn > Tuần > Bài học. 4 giai đoạn × 3 tuần × 2 bài = 24 bài
+   học ngắn kiểu Duolingo (mỗi bài đúng 1 chủ đề riêng, 5 từ vựng, 5–6 bài tập
+   chấm điểm thật, dạng bài luân phiên trong cùng giai đoạn) + 4 Assessment Test
+   cuối giai đoạn. Nội dung là bài tập mẫu TỰ BIÊN GỐC mô phỏng format TOEIC —
+   không phải đề thi thật của ETS; mọi điểm TOEIC và điểm Nói/Viết trong lộ
+   trình này đều là ƯỚC TÍNH THAM KHẢO. Mỗi bài tập mang nhiều tag cùng lúc
+   (Grammar / Vocab / Difficulty / Part / Cognitive_Skill) để học thích ứng. */
+const TOEIC_STAGES = [
+  {n:1, name:"Foundation", range:"0–450", focus:"Nhóm 1 Nhận diện từ loại (danh/động/tính/trạng theo vị trí & hậu tố, đại từ, từ hạn định) và thì cốt lõi: Hiện tại đơn, Hiện tại tiếp diễn, Quá khứ đơn."},
+  {n:2, name:"Breakthrough", range:"450–650", focus:"Hiện tại hoàn thành, Quá khứ hoàn thành, Tương lai đơn và Tương lai gần — qua chủ đề tài chính cơ bản, marketing, nhân sự, logistics."},
+  {n:3, name:"Intermediate", range:"650–800", focus:"Nhóm 3 quyết định mốc 700+: Câu bị động, Mệnh đề quan hệ (đầy đủ & rút gọn), Câu điều kiện Loại 1 & đảo ngữ, Thức giả định; Nhóm 4: cụm từ nối bẫy Part 6."},
+  {n:4, name:"Advanced", range:"800–900+", focus:"Ôn phối hợp toàn bộ các nhóm, dạng nâng cao (suy luận, bẫy Part 6) và luyện bấm giờ."}
+];
+const TAG_LABELS = {
+  "Grammar: Word_Classes":"Từ loại","Grammar: Pronouns":"Đại từ","Grammar: Determiners":"Từ hạn định",
+  "Grammar: Present_Simple":"thì Hiện tại đơn","Grammar: Present_Continuous":"thì Hiện tại tiếp diễn","Grammar: Past_Simple":"thì Quá khứ đơn",
+  "Grammar: Prepositions":"Giới từ chỉ vị trí","Grammar: Present_Perfect":"thì Hiện tại hoàn thành","Grammar: Past_Perfect":"thì Quá khứ hoàn thành",
+  "Grammar: Future_Simple":"thì Tương lai đơn","Grammar: Going_To":"Tương lai gần (be going to)","Grammar: Passive":"câu Bị động",
+  "Grammar: Relative_Clauses":"Mệnh đề quan hệ","Grammar: Conditionals":"Câu điều kiện","Grammar: Subjunctive":"Thức giả định",
+  "Grammar: Linking_Words":"Cụm từ nối","Vocab: Workplace":"Từ vựng công sở","Vocab: Finance":"Từ vựng tài chính",
+  "Vocab: Marketing":"Từ vựng marketing","Vocab: Logistics":"Từ vựng logistics","Vocab: HR":"Từ vựng nhân sự"
+};
+function tagLabel(t){ return TAG_LABELS[t] || t.replace(/^(Grammar|Vocab|Difficulty|Part|Cognitive_Skill):\s*/,""); }
+/* vocab: [word, ipa, pos, nghĩa Việt, câu ví dụ] · mcq: [câu hỏi, [4 lựa chọn], chỉ số đúng, giải thích] */
+const TOEIC_LESSONS = [
+{id:"t1-1",stage:1,week:1,title:"Word Classes in the Office",topic:"Nhận diện từ loại nơi công sở",topicEn:"word classes at work",gt:"Word classes by position and suffix",gb:"Danh từ thường đứng sau mạo từ/tính từ (a quick decision); động từ đứng sau chủ ngữ; tính từ đứng trước danh từ hoặc sau be; trạng từ (thường tận cùng -ly) bổ nghĩa cho động từ. Hậu tố gợi ý: -tion/-ment = danh từ, -ful/-ive = tính từ, -ly = trạng từ.",ge:"The manager made a quick decision.",gtags:["Grammar: Word_Classes"],vtag:"Vocab: Workplace",vocab:[["decision","/dɪˈsɪʒn/","noun","quyết định","The manager made a quick decision."],["manager","/ˈmænɪdʒə/","noun","quản lý, trưởng phòng","Our manager checks the report daily."],["report","/rɪˈpɔːt/","noun","báo cáo","Please send the report by Friday."],["quickly","/ˈkwɪkli/","adverb","một cách nhanh chóng","She quickly finished the email."],["careful","/ˈkeəfl/","adjective","cẩn thận","Be careful with the new software."]],mcq:[["The new ___ starts work on Monday.",["manager","manage","managerial","quickly"],0,"Sau “The new” cần một danh từ chỉ người: manager (quản lý)."],["She spoke ___ during the negotiation.",["careful","carefully","care","carefulness"],1,"Bổ nghĩa cho động từ “spoke” cần trạng từ: carefully."],["The team needs a clear ___ before Friday.",["decide","decision","decisive","decidedly"],1,"Sau tính từ “clear” cần danh từ: decision (hậu tố -sion)."]]},
+{id:"t1-2",stage:1,week:1,title:"Pronouns in Office Messages",topic:"Đại từ trong tin nhắn công sở",topicEn:"pronouns in office messages",gt:"Personal, object, possessive and reflexive pronouns",gb:"Đại từ nhân xưng làm chủ ngữ (I, we, she…); tân ngữ đứng sau động từ/giới từ (me, us, her…); đại từ sở hữu đứng một mình (mine, hers…); đại từ phản thân (myself, himself…) khi chủ ngữ và tân ngữ là cùng một người.",ge:"Ms. Lan sent the file to him herself.",gtags:["Grammar: Pronouns"],vtag:"Vocab: Workplace",vocab:[["colleague","/ˈkɒliːɡ/","noun","đồng nghiệp","My colleague works in sales."],["reply","/rɪˈplaɪ/","verb","trả lời (tin nhắn, email)","Please reply to this email today."],["attach","/əˈtætʃ/","verb","đính kèm","I attach the file to the message."],["send","/send/","verb","gửi","We send invoices every Monday."],["receive","/rɪˈsiːv/","verb","nhận","Did you receive my message?"]],mcq:[["Mr. Nam introduced ___ to the new client.",["himself","him","he","his"],0,"Chủ ngữ và người được giới thiệu là cùng một người → đại từ phản thân: himself."],["Please send the report to ___ by noon.",["we","us","our","ours"],1,"Sau giới từ “to” cần tân ngữ: us."],["The laptop on the desk is ___; the other one is mine.",["her","she","hers","herself"],2,"Đứng một mình thay cho “her laptop” → đại từ sở hữu: hers."]]},
+{id:"t1-3",stage:1,week:2,title:"How Much, How Many: Determiners",topic:"Từ hạn định với danh từ đếm được và không đếm được",topicEn:"determiners and quantities",gt:"Determiners with countable and uncountable nouns",gb:"many / few / several đi với danh từ đếm được số nhiều; much / a great deal of / a large amount of đi với danh từ không đếm được; a variety of + danh từ số nhiều chỉ sự đa dạng.",ge:"A great deal of time was saved.",gtags:["Grammar: Determiners"],vtag:"Vocab: Workplace",vocab:[["equipment","/ɪˈkwɪpmənt/","noun","thiết bị (không đếm được)","The equipment is new."],["information","/ˌɪnfəˈmeɪʃn/","noun","thông tin (không đếm được)","We need more information."],["advice","/ədˈvaɪs/","noun","lời khuyên (không đếm được)","Thank you for your advice."],["stationery","/ˈsteɪʃənri/","noun","văn phòng phẩm","The stationery is in the drawer."],["budget","/ˈbʌdʒɪt/","noun","ngân sách","The budget is limited this year."]],mcq:[["There are ___ employees in the sales team.",["many","much","a great deal of","little"],0,"“employees” đếm được, số nhiều → many."],["We spent ___ money on new equipment.",["many","a great deal of","few","several"],1,"“money” không đếm được → a great deal of."],["The store offers ___ of office supplies.",["a variety","variety of them","a variety of","many variety"],2,"Cấu trúc đúng: a variety of + danh từ số nhiều."]]},
+{id:"t1-4",stage:1,week:2,title:"Present Simple: Schedules and Facts",topic:"Hiện tại đơn — lịch trình và sự thật",topicEn:"schedules and facts",gt:"Present Simple for schedules and facts",gb:"Hiện tại đơn diễn tả lịch trình cố định và sự thật lặp lại: chủ ngữ he/she/it + V-s/es. Dấu hiệu: every day, usually, always, lịch tàu xe/giờ mở cửa.",ge:"The train leaves at 7:30 every morning.",gtags:["Grammar: Present_Simple"],vtag:"Vocab: Workplace",vocab:[["schedule","/ˈʃedjuːl/","noun","lịch trình, thời gian biểu","The schedule changes every week."],["depart","/dɪˈpɑːt/","verb","khởi hành","The bus departs at nine."],["arrive","/əˈraɪv/","verb","đến nơi","We arrive at the office at eight."],["daily","/ˈdeɪli/","adjective","hằng ngày","This is our daily report."],["routine","/ruːˈtiːn/","noun","thói quen, công việc thường nhật","Her routine starts with email."]],mcq:[["The office ___ at 8 a.m. every day.",["open","opens","opening","opened"],1,"Chủ ngữ “The office” (it) + lịch cố định → opens."],["Ms. Hoa ___ to work by bus.",["go","goes","going","gone"],1,"Chủ ngữ “Ms. Hoa” (she) → goes."],["Our team meetings ___ on Mondays.",["is","are","be","being"],1,"“meetings” số nhiều → are."]]},
+{id:"t1-5",stage:1,week:3,title:"Present Continuous: Arranged Plans",topic:"Hiện tại tiếp diễn — kế hoạch đã chốt",topicEn:"arranged plans",gt:"Present Continuous for fixed arrangements",gb:"Hiện tại tiếp diễn (am/is/are + V-ing) diễn tả việc đang xảy ra lúc nói, hoặc kế hoạch tương lai ĐÃ được sắp xếp/chốt với người khác (có giờ, có người liên quan).",ge:"We are meeting the client at 3 p.m. tomorrow.",gtags:["Grammar: Present_Continuous"],vtag:"Vocab: Workplace",vocab:[["arrange","/əˈreɪndʒ/","verb","sắp xếp","We arrange a meeting for Tuesday."],["appointment","/əˈpɔɪntmənt/","noun","cuộc hẹn","I have an appointment at ten."],["presentation","/ˌpreznˈteɪʃn/","noun","bài thuyết trình","Her presentation is on Friday."],["visitor","/ˈvɪzɪtə/","noun","khách đến thăm","A visitor is waiting downstairs."],["prepare","/prɪˈpeə/","verb","chuẩn bị","They prepare the room for the event."]],mcq:[["Look! The delivery team ___ the boxes now.",["carry","carries","is carrying","carried"],2,"“now” + hành động đang diễn ra → is carrying."],["I ___ the supplier tomorrow morning; we agreed yesterday.",["meet","am meeting","meets","met"],1,"Kế hoạch đã chốt với người khác → hiện tại tiếp diễn: am meeting."],["She ___ for the exam this week.",["studies","is studying","study","studied"],1,"Hành động tạm thời quanh hiện tại → is studying."]]},
+{id:"t1-6",stage:1,week:3,special:"prep",skill:"listening",title:"Prepositions of Place: in, on, at",topic:"Giới từ chỉ vị trí trong văn phòng",topicEn:"places in the office",gt:"in / on / at / under / adjacent to",gb:"in = bên trong không gian kín (in the folder, in the room); on = trên bề mặt (on the desk, on the top shelf); at = tại một điểm (at the reception, at the entrance); under = bên dưới; adjacent to = ngay sát bên cạnh.",ge:"The contract is in the blue folder, on the top shelf.",gtags:["Grammar: Prepositions"],vtag:"Vocab: Workplace",vocab:[["folder","/ˈfəʊldə/","noun","bìa hồ sơ, thư mục","The contract is in the blue folder."],["shelf","/ʃelf/","noun","kệ, giá sách","The books are on the top shelf."],["printer","/ˈprɪntə/","noun","máy in","The printer is next to the desk."],["reception","/rɪˈsepʃn/","noun","quầy lễ tân","Meet the client at the reception."],["contract","/ˈkɒntrækt/","noun","hợp đồng","Please sign the contract today."]],mcq:[]},
+{id:"t2-1",stage:2,week:1,special:"timeline",skill:"listening",title:"Present Perfect: Project Progress",topic:"Hiện tại hoàn thành — tiến độ dự án",topicEn:"project progress",gt:"Present Perfect — have/has + V3",gb:"Hiện tại hoàn thành (have/has + V3) nhấn mạnh KẾT QUẢ còn liên quan tới hiện tại và tiến độ tính đến nay, không cần nói rõ thời điểm. Khác Quá khứ đơn (nói rõ việc đã kết thúc kèm mốc thời gian) và Quá khứ hoàn thành (việc xảy ra trước một việc quá khứ khác).",ge:"We have finished the draft.",gtags:["Grammar: Present_Perfect"],vtag:"Vocab: Workplace",vocab:[["progress","/ˈprəʊɡres/","noun","tiến độ","The progress is faster than expected."],["draft","/drɑːft/","noun","bản nháp","We have finished the draft."],["deadline","/ˈdedlaɪn/","noun","hạn chót","The deadline is November 1."],["complete","/kəmˈpliːt/","verb","hoàn thành","They complete the task today."],["submit","/səbˈmɪt/","verb","nộp, đệ trình","Please submit the report by noon."]],mcq:[]},
+{id:"t2-2",stage:2,week:1,title:"Past Perfect: The Audit Surprise",topic:"Quá khứ hoàn thành — buổi kiểm toán bất ngờ",topicEn:"an audit surprise",gt:"Past Perfect for the earlier past event",gb:"Khi có hai hành động trong quá khứ, hành động xảy ra TRƯỚC dùng Quá khứ hoàn thành (had + V3), hành động xảy ra sau dùng Quá khứ đơn. Dấu hiệu: by the time, before, after.",ge:"The accountant had left before the auditors arrived.",gtags:["Grammar: Past_Perfect"],vtag:"Vocab: Finance",vocab:[["audit","/ˈɔːdɪt/","noun","kiểm toán","The audit starts next week."],["invoice","/ˈɪnvɔɪs/","noun","hóa đơn","Please pay this invoice by Friday."],["account","/əˈkaʊnt/","noun","tài khoản","The account is empty."],["balance","/ˈbæləns/","noun","số dư tài khoản","The balance is two hundred dollars."],["receipt","/rɪˈsiːt/","noun","biên lai, hóa đơn thanh toán","Keep the receipt for the audit."]],mcq:[["By the time the manager arrived, the team ___ the report.",["finish","had finished","finishes","is finishing"],1,"Hoàn thành báo cáo xảy ra TRƯỚC khi quản lý đến → had finished."],["She realised she ___ the wrong file.",["sends","had sent","is sending","send"],1,"Việc gửi nhầm file xảy ra trước lúc cô ấy nhận ra → had sent."],["The shop had closed before we ___ there.",["get","got","gets","getting"],1,"Hành động xảy ra sau (đến nơi) dùng Quá khứ đơn: got."]]},
+{id:"t2-3",stage:2,week:2,title:"Future Simple: Product Launch Promises",topic:"Tương lai đơn — cam kết ra mắt sản phẩm",topicEn:"a product launch",gt:"will for promises and predictions",gb:"Tương lai đơn (will + V) dùng cho cam kết/lời hứa ngay lúc nói, dự đoán và đề nghị giúp đỡ: I will send it tonight. Dấu hiệu: promise, I think, probably.",ge:"We will launch the product in June.",gtags:["Grammar: Future_Simple"],vtag:"Vocab: Marketing",vocab:[["launch","/lɔːntʃ/","verb","ra mắt (sản phẩm)","We will launch the product in June."],["campaign","/kæmˈpeɪn/","noun","chiến dịch (quảng cáo)","The campaign starts in May."],["customer","/ˈkʌstəmə/","noun","khách hàng","Every customer receives a gift."],["advertise","/ˈædvətaɪz/","verb","quảng cáo","They advertise on social media."],["product","/ˈprɒdʌkt/","noun","sản phẩm","This product is very popular."]],mcq:[["I promise I ___ the email tonight.",["send","will send","sends","sent"],1,"Lời hứa/cam kết → will send."],["The new campaign ___ more young customers, I believe.",["attracts","will attract","attracted","attracting"],1,"Dự đoán về tương lai → will attract."],["___ you help me with the poster, please?",["Will","Did","Have","Was"],0,"Đề nghị/lời nhờ lịch sự ở tương lai → Will you help…?"]]},
+{id:"t2-4",stage:2,week:2,title:"Going To: Shipping Plans with Evidence",topic:"Tương lai gần — kế hoạch giao hàng có bằng chứng",topicEn:"shipping plans",gt:"be going to for plans with present evidence",gb:"be going to + V dùng cho dự định đã lên kế hoạch, hoặc dự đoán CÓ BẰNG CHỨNG ở hiện tại (nhìn thấy mây đen → trời sắp mưa; xe đã đặt → sắp giao hàng).",ge:"Look at those clouds — it is going to rain.",gtags:["Grammar: Going_To"],vtag:"Vocab: Logistics",vocab:[["shipment","/ˈʃɪpmənt/","noun","lô hàng, việc giao hàng","The shipment leaves on Friday."],["warehouse","/ˈweəhaʊs/","noun","nhà kho","The warehouse is near the port."],["deliver","/dɪˈlɪvə/","verb","giao hàng","We deliver goods every day."],["package","/ˈpækɪdʒ/","noun","bưu kiện, gói hàng","This package is very heavy."],["route","/ruːt/","noun","tuyến đường","The route is shorter by train."]],mcq:[["Watch out! That box ___ fall.",["is going to","went to","has went","falls last week"],0,"Bằng chứng ngay trước mắt (hộp đang nghiêng) → is going to fall."],["We ___ the goods on Friday; the truck is already booked.",["are going to ship","ships yesterday","shipped now","ship last week"],0,"Kế hoạch đã sắp xếp (xe đã đặt) → are going to ship."],["The sky is very dark. It ___ rain soon.",["is going to","rained","has rain","rain yesterday"],0,"Dự đoán có bằng chứng hiện tại → is going to rain."]]},
+{id:"t2-5",stage:2,week:3,title:"Invoices Paid and Pending",topic:"Hóa đơn đã trả và đang chờ",topicEn:"paid and pending invoices",gt:"Past Simple vs Present Perfect",gb:"Quá khứ đơn đi với mốc thời gian đã kết thúc (yesterday, last Friday). Hiện tại hoàn thành dùng khi chưa rõ thời điểm hoặc việc còn liên quan hiện tại — thường đi với yet, already, just.",ge:"We paid invoice 12 yesterday, but we have not received invoice 13 yet.",gtags:["Grammar: Past_Simple","Grammar: Present_Perfect"],vtag:"Vocab: Finance",vocab:[["payment","/ˈpeɪmənt/","noun","khoản thanh toán","The payment arrived this morning."],["pending","/ˈpendɪŋ/","adjective","đang chờ xử lý","Three invoices are still pending."],["overdue","/ˌəʊvəˈdjuː/","adjective","quá hạn","This bill is overdue."],["amount","/əˈmaʊnt/","noun","số tiền, số lượng","The amount is five hundred dollars."],["transfer","/trænsˈfɜː/","verb","chuyển (tiền)","We transfer the money today."]],mcq:[["We ___ the supplier last Friday.",["have paid","paid","pay now","paying"],1,"“last Friday” là mốc đã kết thúc → Quá khứ đơn: paid."],["The client ___ the invoice yet.",["didn't pay","hasn't paid","doesn't paid","not pay"],1,"“yet” + việc chưa xong tính đến nay → hasn't paid."],["___ the receipt yesterday?",["Did you receive","Have you receive","Do you received","Are you receive"],0,"Câu hỏi về mốc “yesterday” → Did you receive…?"]]},
+{id:"t2-6",stage:2,week:3,title:"Recruitment Progress This Quarter",topic:"Tiến độ tuyển dụng quý này",topicEn:"recruitment progress",gt:"Present Perfect for progress up to now",gb:"Hiện tại hoàn thành báo cáo tiến độ tính đến nay, thường đi với so far, this quarter, since + mốc bắt đầu, for + khoảng thời gian.",ge:"We have interviewed twelve candidates this month.",gtags:["Grammar: Present_Perfect"],vtag:"Vocab: HR",vocab:[["candidate","/ˈkændɪdət/","noun","ứng viên","The candidate has five years of experience."],["interview","/ˈɪntəvjuː/","verb","phỏng vấn","We interview three people today."],["recruit","/rɪˈkruːt/","verb","tuyển dụng","The company will recruit ten staff."],["position","/pəˈzɪʃn/","noun","vị trí công việc","This position is still open."],["applicant","/ˈæplɪkənt/","noun","người ứng tuyển","Each applicant sends a CV."]],mcq:[["The HR team ___ five candidates so far.",["has interviewed","interview yesterday","interviews last week","interviewing"],0,"“so far” — tiến độ tính đến nay → has interviewed."],["She ___ for this company since 2022.",["works","has worked","work","worked yesterday"],1,"“since 2022” kéo dài đến hiện tại → has worked."],["We ___ the new assistant yet.",["haven't hired","didn't hired","not hire","hasn't hire"],0,"“yet” + chủ ngữ “we” → haven't hired."]]},
+{id:"t3-1",stage:3,week:1,title:"The Report Was Submitted: Passive Voice",topic:"Câu bị động — hàng hóa, hợp đồng, báo cáo",topicEn:"passive voice at work",gt:"Passive Voice — focus on the receiver of the action",gb:"Câu bị động (be + V3) nhấn mạnh ĐỐI TƯỢNG chịu tác động (hàng hóa, hợp đồng, báo cáo) thay vì người thực hiện: The goods were delivered on Monday. Sau modal verb: must be + V3.",ge:"The goods were delivered on Monday.",gtags:["Grammar: Passive"],vtag:"Vocab: Workplace",vocab:[["submit","/səbˈmɪt/","verb","nộp, đệ trình","Please submit the report by noon."],["deliver","/dɪˈlɪvə/","verb","giao (hàng)","We deliver the goods on Monday."],["approve","/əˈpruːv/","verb","phê duyệt","The director will approve the plan."],["contract","/ˈkɒntrækt/","noun","hợp đồng","Please sign the contract today."],["goods","/ɡʊdz/","noun","hàng hóa","The goods are in the warehouse."]],mcq:[["The contract ___ by both parties yesterday.",["signed","was signed","has sign","signing"],1,"Chủ ngữ “contract” là vật chịu tác động + “yesterday” → was signed."],["All reports must ___ before Friday.",["submit","be submitted","submitted them","submitting"],1,"Sau modal “must” + bị động → be submitted."],["The goods ___ to the warehouse every week.",["transport","are transported","transports","transporting"],1,"“goods” số nhiều + thói quen → are transported."]]},
+{id:"t3-2",stage:3,week:1,title:"The Manager Who Signed It: Relative Clauses",topic:"Mệnh đề quan hệ đầy đủ",topicEn:"relative clauses",gt:"Relative clauses — who, which, that, whose",gb:"Mệnh đề quan hệ bổ nghĩa cho danh từ đứng trước: who cho người, which cho vật, that cho cả người/vật, whose chỉ sở hữu (whose + danh từ).",ge:"The woman who called is our supplier.",gtags:["Grammar: Relative_Clauses"],vtag:"Vocab: Workplace",vocab:[["supplier","/səˈplaɪə/","noun","nhà cung cấp","Our supplier is in Japan."],["clause","/klɔːz/","noun","mệnh đề","This clause explains the price."],["refer","/rɪˈfɜː/","verb","ám chỉ, đề cập","The rules refer to all staff."],["describe","/dɪˈskraɪb/","verb","mô tả","Please describe the problem."],["client","/ˈklaɪənt/","noun","khách hàng (dịch vụ)","The client signed the contract."]],mcq:[["The employee ___ won the award is from Hanoi.",["who","which","what","whom is"],0,"Bổ nghĩa cho người “employee” làm chủ ngữ → who."],["The software ___ we use is very reliable.",["which","who person","whose","what"],0,"Bổ nghĩa cho vật “software” → which."],["The man ___ car was stolen called the police.",["who","whose","which","that is"],1,"Chỉ sở hữu (xe của người đàn ông) → whose."]]},
+{id:"t3-3",stage:3,week:2,title:"Reduced Clauses: V-ing and V-ed",topic:"Mệnh đề quan hệ rút gọn",topicEn:"reduced relative clauses",gt:"Reduced relative clauses — V-ing (active) and V-ed (passive)",gb:"Rút gọn mệnh đề quan hệ: chủ động → V-ing (employees working in this office = employees who work…); bị động → V-ed (documents signed yesterday = documents which were signed…).",ge:"The documents signed yesterday are on your desk.",gtags:["Grammar: Relative_Clauses"],vtag:"Vocab: Workplace",vocab:[["require","/rɪˈkwaɪə/","verb","yêu cầu, đòi hỏi","This job requires experience."],["attach","/əˈtætʃ/","verb","đính kèm","I attach the file to the message."],["remain","/rɪˈmeɪn/","verb","còn lại, vẫn còn","Two problems remain unsolved."],["discuss","/dɪˈskʌs/","verb","thảo luận","We discuss the plan today."],["issue","/ˈɪʃuː/","verb","ban hành, cấp phát","The office issues new badges."]],mcq:[["The forms ___ last week must be checked again.",["issued","issuing man","issue","issues"],0,"“forms” chịu tác động (được ban hành) → rút gọn bị động: issued."],["Employees ___ in this department wear badges.",["working","works","work last week","worked yesterday"],0,"“Employees” tự thực hiện hành động → rút gọn chủ động: working."],["The report ___ by the team needs one more chart.",["written","writing team","writes","write"],0,"“by the team” cho thấy bị động → written."]]},
+{id:"t3-4",stage:3,week:2,title:"Contract Negotiation: Conditionals and Inversion",topic:"Câu điều kiện trong đàm phán hợp đồng",topicEn:"negotiating a contract",gt:"Conditional Type 1 and inverted forms (Should + S + V)",gb:"Câu điều kiện Loại 1 (If + Hiện tại đơn, will + V) cho điều kiện có thật trong đàm phán. Dạng đảo ngữ trang trọng: Should + S + V thay cho If + S + should…: Should you accept our terms, we will sign today.",ge:"Should you accept our terms, we will sign today.",gtags:["Grammar: Conditionals"],vtag:"Vocab: Finance",vocab:[["negotiate","/nɪˈɡəʊʃieɪt/","verb","đàm phán","We negotiate the price today."],["terms","/tɜːmz/","noun","điều khoản","Please read the terms carefully."],["discount","/ˈdɪskaʊnt/","noun","chiết khấu, giảm giá","We offer a ten percent discount."],["accept","/əkˈsept/","verb","chấp nhận","They accept our offer."],["deal","/diːl/","noun","thỏa thuận","The deal is worth one million dollars."]],mcq:[["If the client ___ a bigger order, we will offer a discount.",["places","will place","placed yesterday","placing now is"],0,"Mệnh đề If Loại 1 dùng Hiện tại đơn: places."],["___ you need more time, we can extend the deadline.",["Should","Were finished","Had done","Did yesterday"],0,"Đảo ngữ điều kiện Loại 1: Should you need…"],["If we reduce the price, the buyer ___ the contract.",["signs tomorrow maybe","will sign","signed yesterday","signing"],1,"Mệnh đề chính Loại 1: will sign."]]},
+{id:"t3-5",stage:3,week:3,title:"The Board Demands: Subjunctive",topic:"Thức giả định — yêu cầu và đề xuất bắt buộc",topicEn:"the subjunctive",gt:"Subjunctive — suggest / demand / mandate + that + S + base verb",gb:"Sau các động từ diễn đạt sự bắt buộc/đề xuất (suggest, demand, require, mandate…) và cấu trúc It is essential that…, động từ trong mệnh đề that luôn ở dạng NGUYÊN THỂ, kể cả với chủ ngữ số ít: The director demanded that he be present.",ge:"The director demanded that he be present.",gtags:["Grammar: Subjunctive"],vtag:"Vocab: Workplace",vocab:[["demand","/dɪˈmɑːnd/","verb","yêu cầu (mạnh)","Workers demand higher pay."],["suggest","/səˈdʒest/","verb","đề xuất, gợi ý","I suggest a short break."],["require","/rɪˈkwaɪə/","verb","yêu cầu, đòi hỏi","This job requires experience."],["mandate","/ˈmændeɪt/","noun/verb","lệnh bắt buộc; bắt buộc","The mandate starts in June."],["essential","/ɪˈsenʃl/","adjective","thiết yếu, bắt buộc phải có","Sleep is essential for health."]],mcq:[["The manager suggested that she ___ early.",["leaves","leave","left yesterday","leaving"],1,"Sau suggested that + S → động từ nguyên thể: leave."],["It is essential that every form ___ signed.",["is","be","was yesterday","are"],1,"Thức giả định: be (không chia theo chủ ngữ)."],["The rules require that each visitor ___ a badge.",["wears","wear","wore","wearing"],1,"Sau require that + S → nguyên thể: wear."]]},
+{id:"t3-6",stage:3,week:3,title:"Linking Words: Part 6 Traps",topic:"Cụm từ nối — bẫy ngữ nghĩa Part 6",topicEn:"linking words",gt:"Linking phrases — time/space, correlatives, cause, concession, purpose",gb:"within (trong vòng), prior to (trước khi), throughout (suốt), adjacent to (sát bên); both…and, either…or, neither…nor, not only…but also; due to/because (nguyên nhân), despite/nevertheless (nhượng bộ), in order to/so that (mục đích).",ge:"Both the price and the quality improved.",gtags:["Grammar: Linking_Words"],vtag:"Vocab: Workplace",vocab:[["within","/wɪˈðɪn/","preposition","trong vòng (thời gian)","Reply within two days, please."],["prior","/ˈpraɪə/","adjective","trước, sớm hơn","Prior approval is needed."],["throughout","/θruːˈaʊt/","preposition","trong suốt","It rained throughout the day."],["despite","/dɪˈspaɪt/","preposition","mặc dù","Despite the rain, we went out."],["nevertheless","/ˌnevəðəˈles/","adverb","tuy nhiên, dù vậy","It was late; nevertheless, we continued."]],mcq:[["Please submit the form ___ three working days.",["within","prior man","through desk","despite car"],0,"“trong vòng ba ngày” → within."],["___ the rain, the outdoor event continued.",["Despite","Because car","Due the","So that"],0,"Nhượng bộ + danh từ “the rain” → Despite."],["The office is ___ the bank, on the same street.",["adjacent to","within time","prior the","so that"],0,"“ngay sát bên cạnh” → adjacent to."],["___ the price ___ the quality improved this year.",["Both / and","Either / and","Neither / also","Not / nor"],0,"Liên từ tương quan: both…and."]]},
+{id:"t4-1",stage:4,week:1,timed:true,title:"Timed Sprint: Mixed Tenses",topic:"Ôn phối hợp các thì — bấm giờ",topicEn:"mixed tenses under time pressure",gt:"All core tenses mixed — timed practice",gb:"Ôn phối hợp: chọn thì theo dấu hiệu thời gian và quan hệ trước–sau giữa các sự kiện. Bài này có đồng hồ bấm giờ để luyện tốc độ như phòng thi.",ge:"By this time tomorrow, we will finish the report.",gtags:["Grammar: Present_Perfect","Grammar: Past_Perfect","Grammar: Passive"],vtag:"Vocab: Workplace",vocab:[["deadline","/ˈdedlaɪn/","noun","hạn chót","The deadline is November 1."],["progress","/ˈprəʊɡres/","noun","tiến độ","The progress is faster than expected."],["complete","/kəmˈpliːt/","verb","hoàn thành","They complete the task today."],["review","/rɪˈvjuː/","verb","xem lại, rà soát","Please review the draft tonight."],["submit","/səbˈmɪt/","verb","nộp, đệ trình","Please submit the report by noon."]],mcq:[["By this time tomorrow, we ___ the final report.",["will finish","finished yesterday","finishes every day","finishing"],0,"Mốc tương lai “by this time tomorrow” → will finish."],["She ___ three emails since this morning.",["has sent","sends yesterday","send","sending last night"],0,"“since this morning” → Hiện tại hoàn thành: has sent."],["The bridge ___ in 2010.",["built","was built","builds","building"],1,"“bridge” chịu tác động + mốc quá khứ → was built."]]},
+{id:"t4-2",stage:4,week:1,title:"Advanced Passive in Business Reports",topic:"Câu bị động nâng cao trong báo cáo",topicEn:"advanced passive voice",gt:"Passive with modals and perfect forms",gb:"Bị động nâng cao: has been + V3 (hiện tại hoàn thành bị động), must be + V3, will be + V3 — rất hay gặp trong báo cáo và thông báo doanh nghiệp.",ge:"The meeting has been postponed until next week.",gtags:["Grammar: Passive"],vtag:"Vocab: Workplace",vocab:[["announce","/əˈnaʊns/","verb","thông báo","They announce the results today."],["postpone","/pəˈspəʊn/","verb","hoãn lại","We postpone the meeting."],["confirm","/kənˈfɜːm/","verb","xác nhận","Please confirm your booking."],["damage","/ˈdæmɪdʒ/","verb","làm hư hỏng","The storm damaged the goods."],["replace","/rɪˈpleɪs/","verb","thay thế","We replace broken items for free."]],mcq:[["The meeting ___ until next week.",["has been postponed","postpones","postponing","postpone yesterday"],0,"Bị động hiện tại hoàn thành: has been postponed."],["The damaged goods must ___ immediately.",["replace","be replaced","replaced them","replacing"],1,"must + be + V3 → be replaced."],["The results ___ tomorrow morning.",["will be announced","announce","announces","announcing people"],0,"Bị động tương lai: will be announced."]]},
+{id:"t4-3",stage:4,week:2,timed:true,title:"Part 6 Traps at Speed",topic:"Bẫy cụm từ nối Part 6 — bấm giờ",topicEn:"linking words at speed",gt:"Advanced linking words under time pressure",gb:"Luyện phản xạ với các cụm nối hay ra trong Part 6: prior to, throughout, nevertheless, whereas, consequently. Bài này có đồng hồ bấm giờ.",ge:"Prior to the meeting, please read the agenda.",gtags:["Grammar: Linking_Words"],vtag:"Vocab: Workplace",vocab:[["nevertheless","/ˌnevəðəˈles/","adverb","tuy nhiên, dù vậy","It was late; nevertheless, we continued."],["prior","/ˈpraɪə/","adjective","trước, sớm hơn","Prior approval is needed."],["throughout","/θruːˈaʊt/","preposition","trong suốt","It rained throughout the day."],["whereas","/weərˈæz/","conjunction","trong khi (đối lập)","I prefer tea, whereas he likes coffee."],["consequently","/ˈkɒnsɪkwəntli/","adverb","do đó, hậu quả là","He missed the bus; consequently, he was late."]],mcq:[["___ to the meeting, please read the agenda carefully.",["Prior","Within desk","Despite car","So"],0,"“Trước buổi họp” → Prior to."],["Sales fell in June; ___, they recovered strongly in July.",["nevertheless","because car","so that","within"],0,"Nhượng bộ giữa hai mệnh đề độc lập → nevertheless."],["He worked ___ the holiday to finish the project.",["throughout","despite car only","prior man","so that"],0,"“Trong suốt kỳ nghỉ” → throughout."]]},
+{id:"t4-4",stage:4,week:2,cog:"Inference",title:"Inference: What the Text Implies",topic:"Suy luận — ý ngầm của văn bản (kiểu Part 7)",topicEn:"inference from short texts",gt:"Inference and implied meaning (Part 7 style)",gb:"Câu hỏi suy luận không hỏi điều văn bản nói thẳng, mà hỏi điều có thể HIỂU NGẦM một cách hợp lý từ văn bản. Luôn bám vào chi tiết trong bài, không đoán ngoài bài.",ge:"Prices are valid until Friday — so they may change after Friday.",gtags:["Grammar: Relative_Clauses"],vtag:"Vocab: Workplace",vocab:[["imply","/ɪmˈplaɪ/","verb","ngụ ý, hàm ý","His words imply a warning."],["indicate","/ˈɪndɪkeɪt/","verb","cho thấy, chỉ ra","The figures indicate growth."],["assume","/əˈsjuːm/","verb","cho rằng, giả định","We assume the price includes tax."],["conclude","/kənˈkluːd/","verb","kết luận","We conclude that sales improved."],["evidence","/ˈevɪdəns/","noun","bằng chứng","The evidence is clear."]],mcq:[["Memo: “The workshop, originally set for May 3, will now take place on May 10 because the room is unavailable on May 3.” What can be inferred?",["The workshop was cancelled","The date changed because the room was not free on May 3","The workshop lasts ten days","Nobody can attend on May 10"],1,"Văn bản nói phòng không trống ngày 3/5 nên buổi học dời sang 10/5."],["Email: “Please find attached the revised quotation. Note that all prices are valid until Friday.” The writer implies that:",["Prices will never change","The quotation has no prices","Prices may change after Friday","Friday is a holiday"],2,"“valid until Friday” ngụ ý sau thứ Sáu giá có thể thay đổi."],["“Although the hotel was fully booked, the team managed to find rooms nearby.” This sentence implies that:",["The team stayed at the hotel","Booking was difficult, but the team solved the problem","The team cancelled the trip","There were no rooms anywhere"],1,"“Although… fully booked” + “managed to find” → khó khăn nhưng đã giải quyết được."]]},
+{id:"t4-5",stage:4,week:3,timed:true,title:"Timed Part 5 Sprint",topic:"Chạy nước rút Part 5 — bấm giờ",topicEn:"a Part 5 speed drill",gt:"Part 5 speed drill — word classes and grammar mixed",gb:"Chạy nước rút Part 5: từ loại, bị động và thì phối hợp trong thời gian giới hạn. Ưu tiên nhận diện vị trí từ và dấu hiệu thời gian trước khi đọc kỹ cả câu.",ge:"All applications must be submitted online.",gtags:["Grammar: Word_Classes","Grammar: Passive"],vtag:"Vocab: Workplace",vocab:[["efficient","/ɪˈfɪʃnt/","adjective","hiệu quả","The new system is very efficient."],["approval","/əˈpruːvl/","noun","sự phê duyệt","The plan needs approval."],["negotiate","/nɪˈɡəʊʃieɪt/","verb","đàm phán","We negotiate the price today."],["shipment","/ˈʃɪpmənt/","noun","lô hàng, việc giao hàng","The shipment leaves on Friday."],["candidate","/ˈkændɪdət/","noun","ứng viên","The candidate has five years of experience."]],mcq:[["The ___ of the new system surprised everyone.",["efficiency","efficient","efficiently","efficienct"],0,"Sau “The” cần danh từ: efficiency."],["All applications ___ online.",["must submit","must be submitted","submitting","submits"],1,"“applications” chịu tác động + must → must be submitted."],["She handled the complaint very ___.",["professional","professionally","profession","professions"],1,"Bổ nghĩa cho động từ “handled” → trạng từ: professionally."]]},
+{id:"t4-6",stage:4,week:3,title:"Final Integration: All Skills Review",topic:"Ôn tổng hợp cuối lộ trình",topicEn:"final integrated review",gt:"Integrated review — tenses, passive, clauses and linking words",gb:"Bài ôn cuối lộ trình phối hợp thức giả định, đảo ngữ điều kiện và liên từ tương quan đảo ngữ (Not only…but also) — các cấu trúc quyết định mốc 800–900+.",ge:"Not only did the team meet the deadline, but the quality also improved.",gtags:["Grammar: Conditionals","Grammar: Subjunctive","Grammar: Linking_Words"],vtag:"Vocab: Workplace",vocab:[["strategy","/ˈstrætədʒi/","noun","chiến lược","Our strategy focuses on quality."],["integrate","/ˈɪntɪɡreɪt/","verb","tích hợp, phối hợp","We integrate the two systems."],["comprehensive","/ˌkɒmprɪˈhensɪv/","adjective","toàn diện","This is a comprehensive review."],["achieve","/əˈtʃiːv/","verb","đạt được","They achieve the target early."],["target","/ˈtɑːɡɪt/","noun","mục tiêu","The target is nine hundred points."]],mcq:[["The committee insisted that the report ___ rewritten.",["is","be","was only","are"],1,"Sau insisted that + S → thức giả định: be."],["Should the market fall, we ___ our strategy.",["will adjust","adjusted yesterday","adjusts","adjusting"],0,"Đảo ngữ điều kiện Loại 1 → will adjust."],["Not only ___ the deadline, but the quality also improved.",["the team met","did the team meet","the team meets yesterday","met the team"],1,"Đảo ngữ sau Not only: did the team meet."]]}
+];
+TOEIC_LESSONS.forEach(l=>{
+  l.diff = ["Level_450","Level_600","Level_700","Level_900"][l.stage-1];
+  l.xp = 30; if(!l.skill) l.skill = "reading";
+  l.vocab = l.vocab.map(a=>({w:a[0],ipa:a[1],pos:a[2],vi:a[3],ex:a[4]}));
+});
+const TOEIC_IMGS = {
+  "t1-1":{src:UIMG+"photo-1497366216548-37526070297c?q=80&w=1000&auto=format&fit=crop",en:"A modern office with desks and chairs",vi:"Một văn phòng hiện đại với bàn và ghế"},
+  "t1-4":{src:UIMG+"photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop",en:"A bus on a city street following its daily schedule",vi:"Một chiếc xe buýt trên đường phố theo lịch trình hằng ngày"},
+  "t2-3":{src:UIMG+"photo-1488459716781-31db52582fe9?q=80&w=1000&auto=format&fit=crop",en:"Fresh products displayed at a market stall",vi:"Sản phẩm tươi được bày bán tại một quầy hàng"},
+  "t2-4":{src:UIMG+"photo-1503376780353-7e6692767b70?q=80&w=1000&auto=format&fit=crop",en:"A vehicle on the road delivering goods",vi:"Một phương tiện trên đường đang giao hàng"},
+  "t3-1":{src:UIMG+"photo-1455390582262-044cdead277a?q=80&w=1000&auto=format&fit=crop",en:"A hand writing a report with a pen",vi:"Một bàn tay đang viết báo cáo bằng bút"},
+  "t3-4":{src:UIMG+"photo-1496181133206-80ce9b88a853?q=80&w=1000&auto=format&fit=crop",en:"A laptop on a desk used for online negotiation",vi:"Một chiếc laptop trên bàn dùng để đàm phán trực tuyến"}
+};
+Object.keys(TOEIC_IMGS).forEach(id=>{ const l=TOEIC_LESSONS.find(x=>x.id===id); if(l) l.img=TOEIC_IMGS[id]; });
+
+/* ----- Sinh bộ bài tập 5–6 câu cho bài TOEIC thường, luân phiên dạng theo vị trí trong giai đoạn ----- */
+function getToeicExercises(l){
+  const idx = TOEIC_LESSONS.filter(x=>x.stage===l.stage).indexOf(l);
+  const cogCycle = ["Recognition","Application","Analysis","Inference"];
+  const mkTags = (extra)=>{ const t=[].concat(l.gtags||[],[l.vtag,"Difficulty: "+l.diff,"Part: Part5","Cognitive_Skill: "+(l.cog||cogCycle[(idx+ (extra||0))%4])]); return Array.from(new Set(t)); };
+  const M = k => (l.mcq && l.mcq[k]) ? {type:"mcq",q:l.mcq[k][0],options:l.mcq[k][1],answer:l.mcq[k][2],explain:l.mcq[k][3],tags:mkTags(k)} : null;
+  const F = off => { const f=pickFillVocab(l, off||1); return f? {type:"fill",q:f.blanked,answer:f.v.w,explain:"Từ cần điền là “"+f.v.w+"” ("+f.v.vi+"). Câu đầy đủ: "+f.v.ex,tags:mkTags(1)} : null; };
+  const MEAN = () => { const vs=l.vocab; if(vs.length<3) return null; const v=vs[1]||vs[0]; const opts=seededShuffle(vs.slice(0,4).map(x=>x.vi), l.id+"-tm");
+    return {type:"meaning",q:"What does “"+v.w+"” mean?",options:opts,answer:opts.indexOf(v.vi),explain:"“"+v.w+"” "+(v.ipa||"")+" = "+v.vi+". Ví dụ: "+v.ex,tags:mkTags(2)}; };
+  const ORD = () => { const clean=(l.ge||"").replace(/[.!?]$/,""); const words=clean.split(/\s+/).filter(Boolean); if(words.length<4) return null;
+    let sh=seededShuffle(words.map((w,i)=>({w:w,orig:i})), l.id+"-tord"); if(sh.every((x,i)=>x.orig===i)){ const t=sh[0]; sh[0]=sh[1]; sh[1]=t; }
+    return {type:"order_words",target:clean,words:sh,explain:"Câu đúng: “"+clean+".” — câu ví dụ của điểm ngữ pháp “"+l.gt+"”.",tags:mkTags(3)}; };
+  const TF = () => ({type:"truefalse",q:"“"+l.gt+"” is the grammar focus of this lesson.",answer:true,explain:"Đúng — ngữ pháp trọng tâm của bài là: "+l.gt+".",tags:mkTags(0)});
+  const W = () => ({type:"writing",prompt:"Write 3–5 sentences in English about "+l.topicEn+". Try to use the grammar “"+l.gt+"” and at least two new words from this lesson.",min:35,explain:"Bài viết được chấm sơ bộ theo rubric — điểm ước tính tham khảo của hệ thống, không phải điểm thi chính thức của ETS.",tags:[].concat(l.gtags||[],[l.vtag,"Difficulty: "+l.diff,"Skill: Writing","Cognitive_Skill: Production"])});
+  const patterns = [
+    [()=>M(0),()=>M(1),()=>F(1),()=>MEAN(),()=>W()],
+    [()=>M(0),()=>F(2),()=>M(1),()=>ORD(),()=>MEAN()],
+    [()=>M(0),()=>M(1),()=>TF(),()=>F(1),()=>ORD()],
+    [()=>M(0),()=>MEAN(),()=>M(1),()=>F(3),()=>W(),()=>M(2)],
+    [()=>M(0),()=>ORD(),()=>M(1),()=>TF(),()=>F(2)],
+    [()=>M(0),()=>F(1),()=>MEAN(),()=>M(1),()=>ORD(),()=>W()]
+  ];
+  let exs = patterns[idx%6].map(f=>f()).filter(Boolean);
+  let k=2; while(exs.length<5 && k<8){ const extra=[()=>M(2),()=>F(k),()=>TF(),()=>ORD()][k%4](); if(extra) exs.push(extra); k++; }
+  return exs.slice(0,6);
+}
+/* ----- Ghi nhận kết quả theo tag (lưu trong localStorage qua myProg().tagStats) ----- */
+function recordTags(ex, score){
+  const p=myProg(); if(!p||!ex||!ex.tags) return; if(!p.tagStats) p.tagStats={};
+  ex.tags.forEach(t=>{ const s=p.tagStats[t]||(p.tagStats[t]={right:0,total:0}); s.total++; if(score>=1) s.right++; });
+  saveDB();
+}
+function tagWeakStrong(){
+  const p=myProg(); if(!p||!p.tagStats) return null;
+  const rows=Object.keys(p.tagStats).map(t=>({tag:t,right:p.tagStats[t].right,total:p.tagStats[t].total,err:p.tagStats[t].total? (p.tagStats[t].total-p.tagStats[t].right)/p.tagStats[t].total : 0})).filter(r=>r.total>=5);
+  if(!rows.length) return null;
+  const weak=rows.slice().sort((a,b)=> b.err-a.err || b.total-a.total)[0];
+  const strong=rows.slice().sort((a,b)=> a.err-b.err || b.total-a.total)[0];
+  return {rows:rows, weak:weak, strong:(strong&&strong.tag!==weak.tag)? strong : null};
+}
+function toeicGapHtml(){
+  const info=tagWeakStrong(); if(!info) return "";
+  const w=info.weak, errPct=Math.round(w.err*100);
+  const top=info.rows.slice().sort((a,b)=>b.err-a.err).slice(0,3);
+  return `<div class="card"><h3>🎯 Lỗ hổng của bạn (theo tag bài tập TOEIC)</h3>
+  <p>${info.strong? `Bạn nắm vững ${esc(tagLabel(info.strong.tag))}, nhưng ` : ""}tỷ lệ sai câu ${esc(tagLabel(w.tag))} đang là <strong>${errPct}%</strong> (${w.total-w.right}/${w.total} câu sai).</p>
+  ${top.map(r=>`<div><div class="rowflex"><span style="min-width:170px"><strong>${esc(tagLabel(r.tag))}</strong></span><span class="spacer"></span><span class="small muted">sai ${Math.round(r.err*100)}% · ${r.total} lượt làm</span></div><div class="bar orange"><i style="width:${Math.round(r.err*100)}%"></i></div></div>`).join("")}
+  <p class="small muted">Hệ thống gắn mỗi câu hỏi TOEIC với nhiều tag (ngữ pháp, từ vựng, độ khó, Part, kỹ năng tư duy) và theo dõi đúng/sai theo từng tag — thay vì chỉ nhìn điểm tổng.</p>
+  <button class="btn-sm btn-primary" onclick="startTagReview()">Ôn tập theo tag yếu nhất: ${esc(tagLabel(w.tag))}</button></div>`;
+}
+function toeicStageUnlocked(n){
+  if(n<=1) return true;
+  const p=myProg(); const a=p&&p.toeicAssess? p.toeicAssess[n-1] : null;
+  return !!(a&&a.passed);
+}
+
+/* ================= GIAO DIỆN LỘ TRÌNH TOEIC (cây Giai đoạn > Tuần > Bài) ================= */
+function renderToeicPath(){
+  const p=myProg();
+  const doneN=Object.keys(p.toeicDone||{}).length;
+  appEl.innerHTML = `<button class="btn-sm" data-goto="dashboard">← Về Tổng quan</button>
+  <h1 style="margin-top:10px">Lộ trình TOEIC 0-900+</h1>
+  <p class="muted">Lộ trình <strong>riêng</strong>, tách biệt với lộ trình CEFR A1–C2: đi tuyến tính theo cây <strong>Giai đoạn &gt; Tuần &gt; Bài học</strong>, mỗi bài ngắn kiểu Duolingo — đúng 1 chủ đề, 5 từ vựng, 5–6 bài tập chấm điểm. Cuối mỗi giai đoạn là 1 <strong>Assessment Test</strong> mô phỏng format TOEIC (100 điểm: Nghe 25 · Đọc 25 · Nói 25 · Viết 25). Chỉ mở giai đoạn tiếp theo khi đạt <strong>≥ 70/100 và không kỹ năng nào dưới 50%</strong> (12,5/25); thi lại không giới hạn. <strong>Mọi điểm trong lộ trình này là điểm ước tính tham khảo, không phải điểm thi chính thức của ETS.</strong></p>
+  <p><span class="pill blue">Đã hoàn thành ${doneN}/24 bài</span> <span class="pill gold">Tổng số bài trong web: ${allLessons().length + TOEIC_LESSONS.length} bài (42 CEFR + 24 TOEIC)</span></p>
+  ${TOEIC_STAGES.map(st=>{
+    const unlocked=toeicStageUnlocked(st.n);
+    const lessons=TOEIC_LESSONS.filter(l=>l.stage===st.n);
+    const a=p.toeicAssess? p.toeicAssess[st.n] : null;
+    return `<div class="card tree-stage">
+     <div class="rowflex"><h2 style="margin:0">Giai đoạn ${st.n}: ${st.range} — ${st.name}</h2><span class="spacer"></span>${unlocked? (a&&a.passed? '<span class="pill done">Assessment đã đạt ✓</span>' : '<span class="pill doing">Đang mở</span>') : '<span class="pill lock">🔒 Khóa — cần đạt Assessment giai đoạn '+(st.n-1)+'</span>'}</div>
+     <p class="small muted">${esc(st.focus)}</p>
+     ${[1,2,3].map(wk=>`<div class="tree-week">📁 Tuần ${wk}</div>` + lessons.filter(l=>l.week===wk).map(l=>{
+       const special = l.special? ' <span class="pill gold">Tương tác đặc biệt</span>' : (l.timed? ' <span class="pill gold">⏱ Bấm giờ</span>' : "");
+       return `<div class="tlesson"><span>${p.toeicDone&&p.toeicDone[l.id]?"✅":"📘"}</span><span class="grow"><strong class="en">${esc(l.title)}</strong>${special}<br><span class="small muted">${esc(l.topic)} · Ngữ pháp: <span class="en">${esc(l.gt)}</span></span><br>${(l.gtags||[]).concat([l.vtag,"Difficulty: "+l.diff]).map(t=>`<span class="tagchip">${esc(t)}</span>`).join("")}</span>
+       <button class="btn-sm ${p.toeicDone&&p.toeicDone[l.id]?"":"btn-primary"}" data-toeic-lesson="${l.id}" ${unlocked?"":"disabled"}>${p.toeicDone&&p.toeicDone[l.id]?"Học lại":"Vào học"}</button></div>`;
+     }).join("")).join("")}
+     <div class="tlesson" style="border-style:dashed"><span>📝</span><span class="grow"><strong>Assessment Test — cuối Giai đoạn ${st.n}</strong><br><span class="small muted">Mô phỏng format thi thật rút gọn: Part 1–7 cho Nghe/Đọc, dạng TOEIC Speaking &amp; Writing cho Nói/Viết. 100 điểm, thi lại không giới hạn. Điểm chỉ là ước tính tham khảo.</span>
+     ${a?`<br><span class="small">Cao nhất: <strong>${a.best}/100</strong> · Lần gần nhất: ${a.last.total}/100 (Nghe ${a.last.scores.listening} · Đọc ${a.last.scores.reading} · Nói ${a.last.scores.speaking} · Viết ${a.last.scores.writing}) · Đã thi ${a.attempts} lần · ${a.passed?"Đạt ✓":"Chưa đạt"}</span>`:""}</span>
+     <button class="btn-sm btn-primary" data-toeic-assess="${st.n}" ${unlocked?"":"disabled"}>Làm Assessment ${st.n}</button></div>
+    </div>`;
+  }).join("")}`;
+  bindNavHelpers();
+  appEl.querySelectorAll("[data-toeic-lesson]").forEach(b=>b.addEventListener("click",()=>openToeicLesson(b.dataset.toeicLesson)));
+  appEl.querySelectorAll("[data-toeic-assess]").forEach(b=>b.addEventListener("click",()=>startToeicAssess(+b.dataset.toeicAssess)));
+  window.scrollTo({top:0});
+}
+
+/* ================= BÀI HỌC TOEIC THƯỜNG ================= */
+let tLessonState = {};
+let toeicTimerInt = null;
+function toeicVocabTable(l){
+  const p=myProg();
+  return `<h3>📚 Từ vựng mới (${l.vocab.length} từ)</h3>
+  <table><tr><th>Word</th><th>IPA</th><th>Loại từ</th><th>Nghĩa tiếng Việt</th><th>Ví dụ</th><th></th></tr>
+  ${l.vocab.map((v,i)=>`<tr><td><strong class="en">${esc(v.w)}</strong> <button class="btn-sm" data-tsay="${esc(v.w)}" title="Nghe phát âm">🔊</button></td><td class="en">${esc(v.ipa)}</td><td>${esc(v.pos)}</td><td>${esc(v.vi)}</td><td class="en">${esc(v.ex)}</td>
+  <td><button class="btn-sm" data-tsave="${l.id}:${i}">${p.vocab.some(x=>x.w===v.w)?"✓ Đã lưu":"＋ Lưu vào sổ tay"}</button></td></tr>`).join("")}</table>`;
+}
+function bindToeicVocab(l){
+  appEl.querySelectorAll("[data-tsay]").forEach(b=>b.addEventListener("click",()=>speak(b.dataset.tsay,0.9)));
+  appEl.querySelectorAll("[data-tsave]").forEach(b=>b.addEventListener("click",()=>{
+    const [lid,idx]=b.dataset.tsave.split(":"); const les=TOEIC_LESSONS.find(x=>x.id===lid); const v=les.vocab[+idx]; const pp=myProg();
+    if(pp.vocab.some(x=>x.w===v.w)){ toast("Từ này đã có trong sổ tay."); return; }
+    pp.vocab.push({w:v.w, ipa:v.ipa, pos:v.pos, vi:v.vi, ex:v.ex, level:"TOEIC "+les.stage, due:todayStr(), box:0}); saveDB();
+    b.textContent="✓ Đã lưu"; toast("Đã lưu “"+v.w+"” vào sổ tay từ vựng.");
+  }));
+}
+function openToeicLesson(id){
+  const l=TOEIC_LESSONS.find(x=>x.id===id); if(!l) return;
+  if(!toeicStageUnlocked(l.stage)){ toast("Giai đoạn này đang khóa. Hãy đạt Assessment của giai đoạn trước (≥70/100, không kỹ năng nào dưới 50%)."); return; }
+  if(l.special==="timeline") return openTimelineLesson(l);
+  if(l.special==="prep") return openPrepLesson(l);
+  tLessonState[id]={answers:{},graded:false,scores:null};
+  show("toeicpath");
+  appEl.innerHTML = `<button class="btn-sm" id="tBack">← Lộ trình TOEIC</button>
+  <div class="card"><div class="rowflex"><span class="pill blue">Giai đoạn ${l.stage} · Tuần ${l.week}</span><span class="pill gold">+${l.xp} XP khi hoàn thành</span>${l.timed?'<span class="pill gold">⏱ Bấm giờ: <span id="toeicTimer" class="timer">05:00</span></span>':""}</div>
+   <h1 style="margin-top:6px" class="en">${esc(l.title)}</h1>
+   <p><strong>Chủ đề duy nhất của bài:</strong> ${esc(l.topic)}</p>
+   ${l.img?`<div style="margin:10px 0"><img class="heroimg" src="${esc(l.img.src)}" alt="${esc(l.img.en)} — ${esc(l.img.vi)}" loading="lazy" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='flex';"><span class="imgfallback" style="display:none;min-height:120px">🖼 ${esc(l.img.vi)}<br><span class="en">${esc(l.img.en)}</span></span><p class="small muted" style="margin-top:6px">Ảnh minh hoạ: <span class="en">${esc(l.img.en)}</span> — ${esc(l.img.vi)} (ảnh công khai, nguồn Unsplash).</p></div>`:""}
+   ${toeicVocabTable(l)}
+   <h3 style="margin-top:16px">🧩 Ngữ pháp trọng tâm: <span class="en">${esc(l.gt)}</span></h3>
+   <p>${esc(l.gb)}</p><div class="explain"><strong>Ví dụ:</strong> <span class="en">${esc(l.ge)}</span></div>
+   <p class="small">${(l.gtags||[]).concat([l.vtag,"Difficulty: "+l.diff,"Part: Part5"]).map(t=>`<span class="tagchip">${esc(t)}</span>`).join("")}</p>
+   <h3 style="margin-top:16px">✍️ Bài tập (chấm điểm thật)</h3><div id="toeicQuiz"></div><div id="toeicResult"></div>
+  </div>`;
+  document.getElementById("tBack").addEventListener("click",()=>{ stopToeicTimer(); renderToeicPath(); });
+  bindToeicVocab(l);
+  drawToeicExercises(l);
+  if(l.timed) startToeicTimer(300);
+  window.scrollTo({top:0});
+}
+function startToeicTimer(secs){
+  stopToeicTimer(); let left=secs;
+  toeicTimerInt=setInterval(()=>{ left--; const el=document.getElementById("toeicTimer"); if(!el){ stopToeicTimer(); return; }
+    el.textContent=String(Math.floor(Math.max(left,0)/60)).padStart(2,"0")+":"+String(Math.max(left,0)%60).padStart(2,"0");
+    if(left<=0){ stopToeicTimer(); toast("Hết giờ luyện tập! Bạn vẫn có thể nộp bài — trong phòng thi thật hãy phân bổ khoảng 30 giây cho mỗi câu Part 5."); } },1000);
+}
+function stopToeicTimer(){ if(toeicTimerInt){ clearInterval(toeicTimerInt); toeicTimerInt=null; } }
+function drawToeicExercises(l){
+  const st=tLessonState[l.id], box=document.getElementById("toeicQuiz"); if(!box) return;
+  const exs=getToeicExercises(l);
+  const optBtn=(e,i,o,oi)=>{ let cls="opt"; if(st.graded){ if(oi===e.answer) cls+=" right"; else if(st.answers[i]===oi) cls+=" wrong"; } else if(st.answers[i]===oi) cls+=" sel";
+    return `<button class="${cls}" data-topt="${i}:${oi}" ${st.graded?"disabled":""}>${String.fromCharCode(65+oi)}. ${esc(o)}</button>`; };
+  box.innerHTML = exs.map((e,i)=>{ const ans=st.answers[i]; let body="";
+    if(e.type==="mcq"||e.type==="meaning"){ body=`<p><span class="en">${esc(e.q)}</span></p>`+e.options.map((o,oi)=>optBtn(e,i,o,oi)).join(""); }
+    else if(e.type==="fill"){ body=`<p><span class="en">${esc(e.q)}</span></p><input data-tfill="${i}" placeholder="Nhập từ còn thiếu…" style="max-width:340px" value="${esc(ans||"")}" ${st.graded?"disabled":""}>`; }
+    else if(e.type==="truefalse"){ const tfBtn=(val,label)=>{ let cls="opt"; if(st.graded){ if(val===e.answer) cls+=" right"; else if(ans===val) cls+=" wrong"; } else if(ans===val) cls+=" sel";
+      return `<button class="${cls}" style="display:inline-block;width:auto;margin-right:8px" data-ttf="${i}:${val?1:0}" ${st.graded?"disabled":""}>${label}</button>`; };
+      body=`<p><span class="en">${esc(e.q)}</span></p>`+tfBtn(true,"Đúng (True)")+tfBtn(false,"Sai (False)"); }
+    else if(e.type==="order_words"){ const used=ans||[];
+      body=`<p class="small muted">Bấm các từ theo đúng thứ tự để tạo thành câu hoàn chỉnh:</p><div class="rowflex">${e.words.map((w,wi)=>`<button class="btn-sm" data-tword="${i}:${wi}" ${st.graded||used.includes(wi)?"disabled":""}>${esc(w.w)}</button>`).join("")}</div>
+      <div class="explain" style="margin-top:8px"><strong>Câu của bạn:</strong> <span class="en">${used.length? used.map(wi=>esc(e.words[wi].w)).join(" ") : "(chưa chọn từ nào)"}</span> ${!st.graded&&used.length?`<button class="btn-sm" data-tclear="${i}">↺ Làm lại câu</button>`:""}</div>`; }
+    else if(e.type==="writing"){ const wc=ans? String(ans).trim().split(/\s+/).filter(Boolean).length : 0;
+      body=`<p><span class="en">${esc(e.prompt)}</span></p><textarea data-twrite="${i}" rows="4" placeholder="Write your answer in English here…" ${st.graded?"disabled":""}>${esc(ans||"")}</textarea>
+      <p class="small muted">Số từ: <span id="twc${i}">${wc}</span> · <span class="pill gold">Chấm sơ bộ theo rubric — điểm ước tính, không phải điểm ETS</span></p>`; }
+    let fb="";
+    if(st.graded && st.scores){ const g=st.scores[i]||{score:0,note:""}; fb=`<div class="explain">${g.score>=1?"✓ Đúng hoàn toàn. ":g.score>0?"◐ Đúng một phần. ":"✗ Chưa đúng. "}<strong>Điểm: ${g.score}/1.</strong> ${g.note?esc(g.note)+" ":""}${esc(e.explain||"")}</div>`; }
+    return `<div style="margin:14px 0"><p><span class="pill blue">${EX_TYPE_LABELS[e.type]||e.type}</span> <strong>Câu ${i+1}/${exs.length}.</strong> <span class="small muted">${(e.tags||[]).map(t=>`<span class="tagchip">${esc(t)}</span>`).join("")}</span></p>${body}${fb}</div>`;
+  }).join("") + (st.graded?`<button class="btn-sm" id="tqRetry">Làm lại bài tập</button>`:`<button class="btn-primary" id="tqGrade">Chấm điểm bài tập</button>`);
+  box.querySelectorAll("[data-topt]").forEach(b=>b.addEventListener("click",()=>{ const [i,oi]=b.dataset.topt.split(":"); st.answers[+i]=+oi; drawToeicExercises(l); }));
+  box.querySelectorAll("[data-ttf]").forEach(b=>b.addEventListener("click",()=>{ const [i,v]=b.dataset.ttf.split(":"); st.answers[+i]=(v==="1"); drawToeicExercises(l); }));
+  box.querySelectorAll("[data-tfill]").forEach(inp=>inp.addEventListener("input",()=>{ st.answers[+inp.dataset.tfill]=inp.value; }));
+  box.querySelectorAll("[data-tword]").forEach(b=>b.addEventListener("click",()=>{ const [i,wi]=b.dataset.tword.split(":"); if(!st.answers[+i]) st.answers[+i]=[]; st.answers[+i].push(+wi); drawToeicExercises(l); }));
+  box.querySelectorAll("[data-tclear]").forEach(b=>b.addEventListener("click",()=>{ st.answers[+b.dataset.tclear]=[]; drawToeicExercises(l); }));
+  box.querySelectorAll("[data-twrite]").forEach(ta=>ta.addEventListener("input",()=>{ const i=+ta.dataset.twrite; st.answers[i]=ta.value; const el=document.getElementById("twc"+i); if(el) el.textContent=ta.value.trim()? ta.value.trim().split(/\s+/).filter(Boolean).length : 0; }));
+  const g=document.getElementById("tqGrade");
+  if(g) g.addEventListener("click",()=>{
+    const missing=[]; exs.forEach((e,i)=>{ if(!exAttempted(e, st.answers[i], st, i)) missing.push(i+1); });
+    if(missing.length){ toast("Hãy hoàn thành tất cả bài tập trước khi chấm. Còn thiếu câu: "+missing.join(", ")); return; }
+    st.scores={}; let total=0;
+    exs.forEach((e,i)=>{ const gr=gradeOne(e, st.answers[i], st, i); st.scores[i]=gr; total+=gr.score; recordTags(e, gr.score); });
+    total=Math.round(total*10)/10; st.graded=true; stopToeicTimer();
+    const p=myProg(); const ratio=total/exs.length; const need=Math.round(exs.length*2/3*10)/10;
+    recordSkill(l.skill, Math.round(total), exs.length);
+    let html;
+    if(ratio>=2/3 && !p.toeicDone[l.id]){ p.toeicDone[l.id]=true; addStudy(6); p.activity.lesson=true; addXP(l.xp); saveDB();
+      html=`<div class="notice blue">🎉 Bạn đạt <strong>${total}/${exs.length}</strong> điểm bài tập — hoàn thành bài TOEIC “${esc(l.title)}” và nhận <strong>+${l.xp} XP</strong>!</div>`; }
+    else if(ratio>=2/3){ addStudy(4); saveDB(); html=`<div class="notice blue">Bạn đạt <strong>${total}/${exs.length}</strong> điểm bài tập. Bài này đã hoàn thành trước đó nên XP không cộng lại.</div>`; }
+    else { addStudy(3); saveDB(); html=`<div class="notice red">Bạn đạt <strong>${total}/${exs.length}</strong> điểm — cần ít nhất ${need}/${exs.length} (2/3) để hoàn thành. Hãy xem giải thích và làm lại; các tag của câu sai đã được ghi nhận vào mục “Lỗ hổng của bạn”.</div>`; }
+    drawToeicExercises(l); const r2=document.getElementById("toeicResult"); if(r2) r2.innerHTML=html;
+  });
+  const rt=document.getElementById("tqRetry"); if(rt) rt.addEventListener("click",()=>{ tLessonState[l.id]={answers:{},graded:false,scores:null}; drawToeicExercises(l); const r=document.getElementById("toeicResult"); if(r) r.innerHTML=""; if(l.timed) startToeicTimer(300); });
+}
+function finishToeicSpecial(l, score, total, note){
+  const p=myProg(); const ratio= total? score/total : 0;
+  (l.gtags||[]).concat([l.vtag]).forEach(t=>{ const ex={tags:[t]}; for(let k=0;k<2;k++) recordTags(ex, ratio>=2/3?1:0); });
+  let html;
+  if(ratio>=2/3 && !p.toeicDone[l.id]){ p.toeicDone[l.id]=true; addStudy(8); p.activity.lesson=true; addXP(l.xp); saveDB();
+    html=`<div class="notice blue">🎉 Bạn đạt <strong>${score}/${total}</strong> điểm tương tác — hoàn thành bài “${esc(l.title)}” và nhận <strong>+${l.xp} XP</strong>! ${esc(note||"")}</div>`; }
+  else if(ratio>=2/3){ saveDB(); html=`<div class="notice blue">Bạn đạt <strong>${score}/${total}</strong> điểm tương tác. Bài đã hoàn thành trước đó nên XP không cộng lại.</div>`; }
+  else { saveDB(); html=`<div class="notice red">Bạn đạt <strong>${score}/${total}</strong> điểm tương tác — cần ít nhất 2/3 để hoàn thành bài. Hãy thử lại các phần chưa đúng.</div>`; }
+  const r=document.getElementById("toeicResult"); if(r) r.innerHTML=html;
+  window.scrollTo({top:document.body.scrollHeight});
+}
+
+/* ============ BÀI TƯƠNG TÁC 1: TRỤC THỜI GIAN — HIỆN TẠI HOÀN THÀNH ============ */
+const TIMELINE_SCENES = [
+  {zone:"past", label:"QUÁ KHỨ — Tháng 9", dept:"🏢 Phòng Marketing — tháng 9 (quá khứ)", status:"Trạng thái công việc: bản nháp ĐÃ được soạn xong tại một mốc cụ thể trong quá khứ, câu chuyện kể lại sau đó.", dialogue:"We finished the draft on September 15.", kw:"finished", note:"Quá khứ đơn: hành động đã kết thúc hẳn, kèm mốc thời gian rõ ràng (on September 15)."},
+  {zone:"present", label:"HIỆN TẠI — Hôm nay", dept:"🏢 Phòng Marketing — hôm nay (hiện tại)", status:"Trạng thái công việc: bản nháp ĐÃ XONG và sẵn sàng gửi cho khách NGAY BÂY GIỜ — kết quả còn nguyên giá trị ở hiện tại.", dialogue:"We have finished the draft.", kw:"have finished", note:"Hiện tại hoàn thành: không cần nói rõ khi nào, chỉ nhấn mạnh kết quả tính đến nay — bản nháp đã xong, sẵn sàng gửi."},
+  {zone:"future", label:"TƯƠNG LAI — Hạn chót 1/11", dept:"🏢 Phòng Marketing — kế hoạch tới hạn chót 1/11 (tương lai)", status:"Trạng thái công việc: kế hoạch gửi bản nháp cho khách hàng trước hạn chót — cam kết ở tương lai.", dialogue:"We will send the draft before November 1.", kw:"will send", note:"Tương lai đơn: cam kết/kế hoạch ở tương lai (will send)."}
+];
+let tlState = null;
+function openTimelineLesson(l){
+  tlState = {visited:{}, explored:{}, role:null, roleFeedback:"", checks:{}, done:false};
+  show("toeicpath");
+  appEl.innerHTML = `<button class="btn-sm" id="tBack">← Lộ trình TOEIC</button>
+  <div class="card"><div class="rowflex"><span class="pill blue">Giai đoạn ${l.stage} · Tuần ${l.week}</span><span class="pill gold">Bài tương tác đặc biệt</span><span class="pill gold">+${l.xp} XP khi hoàn thành</span></div>
+   <h1 style="margin-top:6px" class="en">${esc(l.title)}</h1>
+   <p><strong>Chủ đề duy nhất của bài:</strong> ${esc(l.topic)} — học bằng trục thời gian động và phân tích email thật trong bối cảnh dự án.</p>
+   ${toeicVocabTable(l)}
+   <h3 style="margin-top:16px">🧩 Ngữ pháp trọng tâm: <span class="en">${esc(l.gt)}</span></h3><p>${esc(l.gb)}</p>
+   <h3 style="margin-top:18px">① Trục thời gian động — kéo thanh trượt</h3>
+   <p class="small muted">Kéo thanh trượt qua ba mốc Quá khứ – Hiện tại – Tương lai và xem bối cảnh phòng ban, trạng thái công việc và câu hội thoại tự đổi thì tương ứng. Hãy ghé đủ cả 3 mốc.</p>
+   <div class="timeline-wrap"><input type="range" id="tlRange" min="0" max="100" value="50">
+   <div class="timeline-track"><span>◀ QUÁ KHỨ</span><span>HIỆN TẠI</span><span>TƯƠNG LAI ▶</span></div></div>
+   <div class="scenebox" id="tlScene"></div>
+   <h3 style="margin-top:18px">② Khám phá công thức have/has + V3</h3>
+   <p class="small muted">Bấm vào từng mảnh của câu để khám phá. Hãy bấm vào <strong>have</strong> và <strong>finished (V3)</strong>.</p>
+   <div class="scenebox"><span class="en" style="font-size:1.15rem">We <button class="kw" data-kw="have">have</button> <button class="kw" data-kw="v3">finished (V3)</button> <button class="kw" data-kw="obj">the draft</button>.</span>
+   <div class="explain" id="kwExplain" style="margin-top:10px">Bấm vào một mảnh câu ở trên để xem giải thích.</div></div>
+   <h3 style="margin-top:18px">③ Role-play: phân tích email báo cáo tiến độ</h3>
+   <div class="scenebox"><p class="small muted">📧 Email của Tom gửi quản lý dự án:</p>
+   <p class="en">“Hi Anna, by the time the client called yesterday, we <strong>finished</strong> the final report, so the client assumed we had missed the deadline and was quite upset.”</p>
+   <p>Câu này đang dùng <strong>Quá khứ đơn (finished)</strong> cho việc hoàn thành báo cáo — việc xảy ra <em>trước</em> cuộc gọi của khách. Cách dùng này khiến người đọc không rõ thứ tự sự kiện và hiểu lầm rằng báo cáo chưa xong khi khách gọi. Theo bạn, động từ đúng phải là:</p>
+   <div class="rowflex"><button class="btn-sm" data-role="0">finished (giữ nguyên)</button><button class="btn-sm btn-primary" data-role="1">had finished</button></div>
+   <div id="roleFb"></div></div>
+   <h3 style="margin-top:18px">④ Kiểm tra nhanh</h3>
+   <div id="tlChecks"></div>
+   <div class="rowflex" style="margin-top:12px"><button class="btn-primary" id="tlGrade">Chấm điểm bài tương tác</button></div>
+   <div id="toeicResult"></div>
+  </div>`;
+  document.getElementById("tBack").addEventListener("click",()=>renderToeicPath());
+  bindToeicVocab(l);
+  const range=document.getElementById("tlRange");
+  const drawScene=()=>{ const v=+range.value; const sc = v<34? TIMELINE_SCENES[0] : v<67? TIMELINE_SCENES[1] : TIMELINE_SCENES[2];
+    tlState.visited[sc.zone]=true;
+    document.getElementById("tlScene").innerHTML = `<strong>${esc(sc.label)}</strong><p style="margin-top:6px">${esc(sc.dept)}</p><p>${esc(sc.status)}</p>
+    <p class="en" style="font-size:1.1rem">💬 “${esc(sc.dialogue.replace(sc.kw,"§"))}”</p><p class="small muted">${esc(sc.note)}</p>
+    <p class="small">Đã khám phá: ${["past","present","future"].map(z=>`<span class="pill ${tlState.visited[z]?"done":"lock"}">${z==="past"?"Quá khứ":z==="present"?"Hiện tại":"Tương lai"} ${tlState.visited[z]?"✓":""}</span>`).join(" ")}</p>`.replace("§", `<mark>${esc(sc.kw)}</mark>`);
+  };
+  range.addEventListener("input", drawScene); drawScene();
+  const kwInfo = { have:"<strong>have / has</strong> — trợ động từ của Hiện tại hoàn thành: I/we/you/they + <em>have</em>; he/she/it + <em>has</em>. Ví dụ: She <em>has</em> finished the draft.",
+    v3:"<strong>finished (V3)</strong> — quá khứ phân từ của finish. Động từ có quy tắc: V + -ed (finish → finished). Một số động từ bất quy tắc: send → sent, write → written, complete → completed.",
+    obj:"<strong>the draft</strong> — tân ngữ: đối tượng chịu tác động. Hiện tại hoàn thành không bắt buộc mốc thời gian; nếu có “yesterday / on September 15” thì phải dùng Quá khứ đơn." };
+  appEl.querySelectorAll("[data-kw]").forEach(b=>b.addEventListener("click",()=>{ const k=b.dataset.kw; tlState.explored[k]=true; b.classList.add("explored");
+    document.getElementById("kwExplain").innerHTML = kwInfo[k]; }));
+  appEl.querySelectorAll("[data-role]").forEach(b=>b.addEventListener("click",()=>{ const pick=+b.dataset.role; tlState.role=pick;
+    document.getElementById("roleFb").innerHTML = pick===1
+      ? `<div class="explain">✓ <strong>Đúng!</strong> Thứ tự sự kiện: (1) hoàn thành báo cáo xảy ra TRƯỚC, (2) khách gọi xảy ra SAU. Hành động xảy ra trước trong quá khứ dùng <strong>Quá khứ hoàn thành (had finished)</strong> — như vậy khách đã có báo cáo trong tay khi gọi, không còn hiểu lầm deadline nữa.</div>`
+      : `<div class="explain">✗ <strong>Chưa đúng.</strong> Nếu giữ “finished” (Quá khứ đơn) cho cả hai sự kiện, người đọc không biết việc nào xảy ra trước — rất dễ hiểu lầm là báo cáo chưa xong khi khách gọi. Việc xảy ra TRƯỚC một việc quá khứ khác phải dùng <strong>had + V3</strong>. Hãy chọn lại.</div>`;
+  }));
+  const checks=[
+    {q:"We ___ the draft, so it is ready to send now.",options:["have finished","finish yesterday","finishes","finishing"],answer:0,explain:"Kết quả còn liên quan hiện tại (“ready now”), không có mốc quá khứ → have finished."},
+    {q:"By the time the client called, we ___ the report.",options:["finish","had finished","have finish","finishes"],answer:1,explain:"Hoàn thành báo cáo trước cuộc gọi (cả hai đều ở quá khứ) → had finished."}
+  ];
+  const drawChecks=()=>{ document.getElementById("tlChecks").innerHTML = checks.map((c,i)=>`<div style="margin:10px 0"><p><strong>Câu ${i+1}.</strong> <span class="en">${esc(c.q)}</span></p>${c.options.map((o,oi)=>`<button class="opt ${tlState.checks[i]===oi?"sel":""}" data-tlcheck="${i}:${oi}">${String.fromCharCode(65+oi)}. ${esc(o)}</button>`).join("")}</div>`).join("");
+    appEl.querySelectorAll("[data-tlcheck]").forEach(b=>b.addEventListener("click",()=>{ const [i,oi]=b.dataset.tlcheck.split(":"); tlState.checks[+i]=+oi; drawChecks(); })); };
+  drawChecks();
+  document.getElementById("tlGrade").addEventListener("click",()=>{
+    let score=0; const total=6;
+    if(["past","present","future"].every(z=>tlState.visited[z])) score+=1;
+    if(tlState.explored.have && tlState.explored.v3) score+=1;
+    if(tlState.role===1) score+=2;
+    checks.forEach((c,i)=>{ if(tlState.checks[i]===c.answer) score+=1; });
+    if(score<total){ toast("Bạn đạt "+score+"/"+total+" điểm tương tác. Gợi ý: kéo trục thời gian qua đủ 3 mốc, bấm khám phá have và V3, chọn đúng “had finished” trong email và trả lời 2 câu kiểm tra."); }
+    finishToeicSpecial(l, score, total, "Thứ tự sự kiện là chìa khóa: việc xảy ra trước trong quá khứ dùng had + V3.");
+  });
+}
+
+/* ============ BÀI TƯƠNG TÁC 2: GIỚI TỪ VỊ TRÍ — KÉO THẢ + NGHE–NHÌN ============ */
+const PREP_TASKS = [
+  {item:"📄 The contract (hợp đồng)", prompt:"Put the contract IN the blue folder.", zone:"folder", explain:"in = bên trong không gian kín (bìa hồ sơ)."},
+  {item:"💻 The laptop (máy tính)", prompt:"Put the laptop ON the desk.", zone:"desk", explain:"on = trên bề mặt (mặt bàn)."},
+  {item:"🔑 The spare keys (chìa khóa dự phòng)", prompt:"Put the spare keys UNDER the desk.", zone:"underdesk", explain:"under = ngay bên dưới mặt bàn."},
+  {item:"🧑 The new employee (nhân viên mới)", prompt:"The new employee waits AT the reception.", zone:"reception", explain:"at = tại một điểm cụ thể (quầy lễ tân)."},
+  {item:"🗂️ The file box (thùng hồ sơ)", prompt:"Put the file box ADJACENT TO the printer.", zone:"printer", explain:"adjacent to = ngay sát bên cạnh máy in."}
+];
+const PREP_ZONES = [
+  {id:"folder", label:"🗂 Blue folder<br><span class='small muted'>bìa hồ sơ xanh — không gian kín</span>"},
+  {id:"desk", label:"🖥 On the desk<br><span class='small muted'>trên mặt bàn</span>"},
+  {id:"underdesk", label:"⬇ Under the desk<br><span class='small muted'>bên dưới bàn</span>"},
+  {id:"reception", label:"🛎 At the reception<br><span class='small muted'>tại quầy lễ tân</span>"},
+  {id:"printer", label:"🖨 Adjacent to the printer<br><span class='small muted'>sát bên máy in</span>"}
+];
+const PREP_LISTEN_SCRIPT = "The contract is in the blue folder, on the top shelf, next to the printer.";
+const PREP_OBJECTS = [
+  {id:"redfolder", label:"🗂 Red folder", hint:"Nghe lại: vật đầu tiên nằm TRONG bìa hồ sơ — hãy tìm bìa màu xanh (blue), không phải màu đỏ."},
+  {id:"bluefolder", label:"🗂 Blue folder", hint:""},
+  {id:"bottomshelf", label:"📚 Bottom shelf", hint:"Nghe lại từ khóa “on the TOP shelf” — hãy tìm kệ TRÊN CÙNG, không phải kệ dưới."},
+  {id:"topshelf", label:"📚 Top shelf", hint:""},
+  {id:"printer", label:"🖨 Printer", hint:""},
+  {id:"deskobj", label:"🖥 Desk", hint:"Vật cuối cùng nằm CẠNH máy in (next to the printer) — không phải cái bàn."}
+];
+const PREP_LISTEN_ORDER = ["bluefolder","topshelf","printer"];
+let prepState = null;
+function openPrepLesson(l){
+  prepState = {task:0, selected:null, placed:{}, dragRight:0, listenStep:0, listenWrong:0, listenRight:0, finished:false};
+  show("toeicpath");
+  appEl.innerHTML = `<button class="btn-sm" id="tBack">← Lộ trình TOEIC</button>
+  <div class="card"><div class="rowflex"><span class="pill blue">Giai đoạn ${l.stage} · Tuần ${l.week}</span><span class="pill gold">Bài tương tác đặc biệt</span><span class="pill gold">+${l.xp} XP khi hoàn thành</span></div>
+   <h1 style="margin-top:6px" class="en">${esc(l.title)}</h1>
+   <p><strong>Chủ đề duy nhất của bài:</strong> ${esc(l.topic)} — kéo thả đồ vật vào đúng vị trí trên sơ đồ văn phòng, rồi nghe hướng dẫn và bấm đúng vật thể.</p>
+   ${toeicVocabTable(l)}
+   <h3 style="margin-top:16px">🧩 Ngữ pháp trọng tâm: <span class="en">${esc(l.gt)}</span></h3><p>${esc(l.gb)}</p>
+   <div class="explain"><strong>Ví dụ:</strong> <span class="en">${esc(l.ge)}</span></div>
+   <h3 style="margin-top:18px">① Kéo thả vào sơ đồ văn phòng (Drag &amp; Drop)</h3>
+   <p class="small muted">Đọc yêu cầu, bấm chọn (hoặc kéo) đồ vật ở khay bên dưới rồi thả/bấm vào đúng vùng vị trí. Đúng: vùng sáng xanh và đồ vật ở yên. Sai: đồ vật quay về khay và hiện giải thích.</p>
+   <div id="prepTask"></div>
+   <div class="office" id="prepZones"></div>
+   <p><strong>Khay đồ vật:</strong></p><div id="prepTray"></div>
+   <div id="prepFb"></div>
+   <h3 style="margin-top:20px">② Nghe – Nhìn: tìm tài liệu theo hướng dẫn</h3>
+   <p class="small muted">Bấm nút Nghe để nghe đoạn hướng dẫn vị trí tài liệu bằng giọng đọc thật của trình duyệt, rồi bấm đúng các vật thể trên hình <strong>theo thứ tự</strong> trong câu. Đúng: vật thể sáng xanh và đường nối được vẽ. Sai: vật thể rung đỏ; sau 2 lần sai ở cùng một bước sẽ hiện gợi ý.</p>
+   ${ttsOK()? "" : '<div class="notice red small">⚠️ Trình duyệt này không hỗ trợ giọng đọc (TTS) nên không phát được audio. Bạn vẫn làm được bài bằng transcript: <span class="en">“'+esc(PREP_LISTEN_SCRIPT)+'”</span></div>'}
+   <div class="rowflex"><button class="btn-sm btn-primary" id="prepListenBtn">🔊 Nghe hướng dẫn</button><button class="btn-sm" id="prepReplayBtn">↺ Nghe lại</button><span class="small muted" id="prepListenState">Bước 1/3: bấm vật thể đầu tiên bạn nghe thấy.</span></div>
+   <div class="office" id="prepObjects" style="margin-top:10px"></div>
+   <p class="pathline" id="prepPath"></p>
+   <div id="prepListenFb"></div>
+   <div class="rowflex" style="margin-top:12px"><button class="btn-primary" id="prepGrade">Chấm điểm bài tương tác</button></div>
+   <div id="toeicResult"></div>
+  </div>`;
+  document.getElementById("tBack").addEventListener("click",()=>renderToeicPath());
+  bindToeicVocab(l);
+  const drawPrep=()=>{
+    const t=PREP_TASKS[prepState.task];
+    document.getElementById("prepTask").innerHTML = t? `<div class="scenebox"><strong>Yêu cầu ${prepState.task+1}/${PREP_TASKS.length}:</strong> <span class="en">${esc(t.prompt)}</span></div>` : `<div class="explain">✓ Đã đặt đúng cả ${PREP_TASKS.length} vị trí. Sang phần Nghe – Nhìn ở dưới nhé.</div>`;
+    document.getElementById("prepZones").innerHTML = PREP_ZONES.map(z=>{ const placedItem=Object.keys(prepState.placed).find(k=>prepState.placed[k]===z.id);
+      return `<div class="zone ${placedItem?"right":""}" data-zone="${z.id}">${z.label}${placedItem?`<br><span class="pill done">${esc(PREP_TASKS[+placedItem].item)} ✓</span>`:""}</div>`; }).join("");
+    document.getElementById("prepTray").innerHTML = PREP_TASKS.map((tk,i)=> prepState.placed[i]!=null? "" : `<span class="objitem ${prepState.selected===i?"sel":""}" draggable="true" data-item="${i}">${esc(tk.item)}</span>`).join("") || '<span class="small muted">(khay trống — đã đặt hết đồ vật)</span>';
+    appEl.querySelectorAll("[data-item]").forEach(el=>{
+      el.addEventListener("click",()=>{ prepState.selected=+el.dataset.item; drawPrep(); });
+      el.addEventListener("dragstart",ev=>{ ev.dataTransfer.setData("text/plain", el.dataset.item); prepState.selected=+el.dataset.item; });
+    });
+    appEl.querySelectorAll("[data-zone]").forEach(z=>{
+      z.addEventListener("click",()=>placeItem(z.dataset.zone));
+      z.addEventListener("dragover",ev=>{ ev.preventDefault(); z.classList.add("over"); });
+      z.addEventListener("dragleave",()=>z.classList.remove("over"));
+      z.addEventListener("drop",ev=>{ ev.preventDefault(); z.classList.remove("over"); placeItem(z.dataset.zone); });
+    });
+  };
+  const placeItem=(zoneId)=>{
+    const i=prepState.selected; if(i==null){ toast("Hãy bấm chọn một đồ vật ở khay trước."); return; }
+    const t=PREP_TASKS[i]; const fb=document.getElementById("prepFb");
+    if(t.zone===zoneId){ prepState.placed[i]=zoneId; prepState.selected=null; prepState.task=PREP_TASKS.findIndex((x,k)=>prepState.placed[k]==null);
+      fb.innerHTML=`<div class="explain">✓ <strong>Đúng!</strong> <span class="en">${esc(t.prompt)}</span> — ${esc(t.explain)}</div>`; if(prepState.task<0) prepState.task=PREP_TASKS.length; drawPrep(); }
+    else { const zEl=appEl.querySelector(`[data-zone="${zoneId}"]`); if(zEl){ zEl.classList.add("wrongshake","shake"); setTimeout(()=>{ zEl.classList.remove("shake"); },800); }
+      fb.innerHTML=`<div class="explain">✗ <strong>Chưa đúng.</strong> Yêu cầu là <span class="en">${esc(t.prompt)}</span> — ${esc(t.explain)} Hãy thử lại.</div>`; }
+  };
+  drawPrep();
+  const drawObjects=()=>{
+    document.getElementById("prepObjects").innerHTML = PREP_OBJECTS.map(o=>{ const doneIdx=PREP_LISTEN_ORDER.indexOf(o.id); const done = doneIdx>=0 && doneIdx<prepState.listenStep;
+      return `<button type="button" class="clickobj ${done?"right":""}" data-obj="${o.id}">${esc(o.label)}${done?" ✓":""}</button>`; }).join("");
+    document.getElementById("prepPath").textContent = prepState.listenStep? "🗺️ Đường nối: "+PREP_LISTEN_ORDER.slice(0,prepState.listenStep).map(id=>{ const o=PREP_OBJECTS.find(x=>x.id===id); return o? o.label.replace(/^\S+\s/,"") : id; }).join(" ➜ ") : "";
+    const st=document.getElementById("prepListenState"); if(st) st.textContent = prepState.listenStep>=3? "Đã tìm đúng cả 3 vật thể theo thứ tự ✓" : "Bước "+(prepState.listenStep+1)+"/3: bấm vật thể tiếp theo bạn nghe thấy.";
+    appEl.querySelectorAll("[data-obj]").forEach(b=>b.addEventListener("click",()=>{
+      if(prepState.listenStep>=3) return;
+      const want=PREP_LISTEN_ORDER[prepState.listenStep]; const fb=document.getElementById("prepListenFb");
+      if(b.dataset.obj===want){ prepState.listenStep++; prepState.listenRight++; prepState.listenWrong=0;
+        fb.innerHTML=`<div class="explain">✓ <strong>Đúng!</strong> Vật thể sáng xanh và đường nối đã được vẽ thêm một đoạn.</div>`; drawObjects(); }
+      else { prepState.listenWrong++; b.classList.add("wrongshake","shake"); setTimeout(()=>b.classList.remove("shake"),800);
+        const wantObj=PREP_OBJECTS.find(x=>x.id===want);
+        fb.innerHTML=`<div class="explain">✗ <strong>Chưa đúng vật thể.</strong> Hãy bấm nút “Nghe lại” và nghe kỹ vị trí thứ ${prepState.listenStep+1} trong câu.${prepState.listenWrong>=2? " 💡 Gợi ý: "+esc(wantObj? (PREP_OBJECTS.find(x=>x.id===b.dataset.obj)&&PREP_OBJECTS.find(x=>x.id===b.dataset.obj).hint || "Hãy tìm vật thể: "+wantObj.label) : "") : ""}</div>`; }
+    }));
+  };
+  drawObjects();
+  const playListen=()=>{ if(!ttsOK()){ toast("Trình duyệt không hỗ trợ giọng đọc — hãy đọc transcript trong khung đỏ phía trên."); return; } speak(PREP_LISTEN_SCRIPT, 0.92); };
+  document.getElementById("prepListenBtn").addEventListener("click", playListen);
+  document.getElementById("prepReplayBtn").addEventListener("click", playListen);
+  document.getElementById("prepGrade").addEventListener("click",()=>{
+    const dragRight=Object.keys(prepState.placed).length;
+    const score=dragRight + prepState.listenStep; const total=PREP_TASKS.length+3;
+    if(score<total) toast("Bạn đạt "+score+"/"+total+" điểm tương tác (kéo thả "+dragRight+"/"+PREP_TASKS.length+", nghe–nhìn "+prepState.listenStep+"/3). Hãy hoàn thành nốt các phần còn thiếu rồi chấm lại.");
+    finishToeicSpecial(l, score, total, "Nhớ ba giới từ cốt lõi: in = trong không gian kín, on = trên bề mặt, at = tại một điểm.");
+  });
+}
+
+/* ================= ASSESSMENT TEST CUỐI GIAI ĐOẠN TOEIC =================
+   4 bài (1 bài / giai đoạn), mỗi bài 100 điểm: Nghe 25 (5 câu có TTS, dạng
+   Part 1–4 rút gọn), Đọc 25 (5 câu, dạng Part 5–7 rút gọn), Nói 25 (dạng TOEIC
+   Speaking: đọc to + trả lời/trình bày, tự đánh giá có ghi chú), Viết 25 (2 đề
+   dạng TOEIC Writing, chấm rubric ước tính). Thi lại không giới hạn. Đạt khi
+   tổng ≥ 70 và mỗi kỹ năng ≥ 12,5/25 (50%). Điểm là ƯỚC TÍNH THAM KHẢO. */
+const TOEIC_ASSESS = {
+1:{ listen:[
+  {part:"Part 2",script:"Where is the meeting room?",q:"Choose the best response:",options:["On the second floor.","At nine o'clock.","Yes, I did."],answer:0,explain:"Câu hỏi Where (ở đâu) → đáp án chỉ địa điểm: On the second floor.",tags:["Grammar: Prepositions","Vocab: Workplace","Difficulty: Level_450","Part: Part2","Cognitive_Skill: Recognition"]},
+  {part:"Part 1",script:"A woman is typing on a computer at her desk.",q:"Which statement matches the description you heard?",options:["A woman is typing on a computer.","A woman is talking on the phone.","A woman is reading a newspaper."],answer:0,explain:"Câu mô tả nói “typing on a computer” — gõ máy tính.",tags:["Vocab: Workplace","Difficulty: Level_450","Part: Part1","Cognitive_Skill: Recognition"]},
+  {part:"Part 3",script:"— The train to the airport leaves at seven thirty. — Then we should leave the office at six. — I agree. I will book a taxi.",q:"When does the train leave?",options:["At six o'clock.","At seven thirty.","At eight o'clock."],answer:1,explain:"“leaves at seven thirty” — tàu chạy lúc 7:30.",tags:["Grammar: Present_Simple","Vocab: Workplace","Difficulty: Level_450","Part: Part3","Cognitive_Skill: Recognition"]},
+  {part:"Part 2",script:"Do you know Mr. Nam's email address?",q:"Choose the best response:",options:["Yes, it is nam at company dot com.","No, I went there yesterday.","He is in the office."],answer:0,explain:"Hỏi địa chỉ email → đáp án đọc địa chỉ email.",tags:["Vocab: Workplace","Difficulty: Level_450","Part: Part2","Cognitive_Skill: Recognition"]},
+  {part:"Part 4",script:"Attention, please. The office will close early today at four o'clock because of a power problem. All staff should save their work and leave by four.",q:"Why will the office close early?",options:["Because of a holiday.","Because of a power problem.","Because of a party."],answer:1,explain:"Thông báo nói rõ: “because of a power problem”.",tags:["Grammar: Linking_Words","Vocab: Workplace","Difficulty: Level_450","Part: Part4","Cognitive_Skill: Inference"]}],
+ read:[
+  {part:"Part 5",q:"The new manager ___ very carefully before she signs a contract.",options:["reads","read yesterday only","reading","are read"],answer:0,explain:"Chủ ngữ số ít “manager” + thói quen → reads.",tags:["Grammar: Present_Simple","Grammar: Word_Classes","Difficulty: Level_450","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"Please put the documents ___ the red folder.",options:["in","on the wall clock","at nine","under time"],answer:0,explain:"Bên trong bìa hồ sơ (không gian kín) → in.",tags:["Grammar: Prepositions","Difficulty: Level_450","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"___ team finished the project on time.",options:["Our","Us","Ourselves only","We is"],answer:0,explain:"Trước danh từ “team” cần tính từ sở hữu: Our.",tags:["Grammar: Pronouns","Difficulty: Level_450","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 6",passage:"Our office has bought ___ new computers this year because the old ones were very slow.",q:"Choose the best word for the blank:",options:["many","much","a great deal of","little"],answer:0,explain:"“computers” đếm được số nhiều → many.",tags:["Grammar: Determiners","Difficulty: Level_450","Part: Part6","Cognitive_Skill: Application"]},
+  {part:"Part 7",passage:"NOTICE: The staff cafeteria will be closed on Saturday and Sunday for cleaning. It will open again on Monday at 7 a.m.",q:"When will the cafeteria open again?",options:["On Saturday.","On Sunday.","On Monday at 7 a.m.","It will never open."],answer:2,explain:"Thông báo ghi rõ: mở lại sáng thứ Hai lúc 7 giờ.",tags:["Vocab: Workplace","Difficulty: Level_450","Part: Part7","Cognitive_Skill: Recognition"]}],
+ speakRead:"Welcome to our company. This is the sales office, and our team meeting starts at nine o'clock every Monday morning.",
+ speakPrompt:"Describe your daily routine at work or at school. Speak for about 45 seconds: say when your day starts, what you usually do first, and who you work with.",
+ writePrompts:[
+  {prompt:"Write a short email (50–70 words) to your manager: ask to change your meeting from Tuesday to Thursday, and give one polite reason.",min:50},
+  {prompt:"Write 4–5 sentences describing your office or classroom: say where three objects are, using in, on and at.",min:40}]},
+2:{ listen:[
+  {part:"Part 3",script:"— Have you sent the invoice to the client yet? — Not yet. I am checking the amount. — Please finish it today. The client is waiting.",q:"What is the woman doing now?",options:["Paying the invoice.","Checking the amount.","Meeting the client."],answer:1,explain:"“I am checking the amount” — đang kiểm tra số tiền.",tags:["Grammar: Present_Perfect","Vocab: Finance","Difficulty: Level_600","Part: Part3","Cognitive_Skill: Recognition"]},
+  {part:"Part 4",script:"Good morning. This is the marketing team. Our new product will be launched next Monday. We will advertise it on social media and offer a ten percent discount in the first week.",q:"When will the product be launched?",options:["This Monday.","Next Monday.","In ten weeks."],answer:1,explain:"“will be launched next Monday”.",tags:["Grammar: Future_Simple","Vocab: Marketing","Difficulty: Level_600","Part: Part4","Cognitive_Skill: Recognition"]},
+  {part:"Part 2",script:"Has the shipment arrived yet?",q:"Choose the best response:",options:["Yes, it arrived an hour ago.","It will rain tomorrow.","I am a driver."],answer:0,explain:"Hỏi việc đã tới chưa → trả lời kèm thời điểm đã qua: arrived an hour ago.",tags:["Grammar: Present_Perfect","Vocab: Logistics","Difficulty: Level_600","Part: Part2","Cognitive_Skill: Application"]},
+  {part:"Part 3",script:"— The warehouse is full, so we are going to rent another one. — When? — Next month, before the big holiday season.",q:"Why are they going to rent another warehouse?",options:["Because the old one is closed.","Because the warehouse is full.","Because it is cheaper in the city."],answer:1,explain:"“The warehouse is full, so…”",tags:["Grammar: Going_To","Vocab: Logistics","Difficulty: Level_600","Part: Part3","Cognitive_Skill: Inference"]},
+  {part:"Part 4",script:"By the time the auditors arrived, the accountant had already prepared all the receipts. The audit finished quickly, in only two days.",q:"What had the accountant done before the auditors arrived?",options:["Prepared all the receipts.","Left the company.","Called the clients."],answer:0,explain:"“had already prepared all the receipts” — hành động xảy ra trước.",tags:["Grammar: Past_Perfect","Vocab: Finance","Difficulty: Level_600","Part: Part4","Cognitive_Skill: Inference"]}],
+ read:[
+  {part:"Part 5",q:"We ___ the supplier two days ago.",options:["have paid","paid","pay now","paying"],answer:1,explain:"“two days ago” → Quá khứ đơn: paid.",tags:["Grammar: Past_Simple","Grammar: Present_Perfect","Difficulty: Level_600","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"Look at the dark clouds! It ___ rain.",options:["is going to","rained yesterday","has rain","rains last week"],answer:0,explain:"Dự đoán có bằng chứng hiện tại → is going to.",tags:["Grammar: Going_To","Difficulty: Level_600","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 6",passage:"Dear Ms. Park, Thank you for your order. Your shipment ___ on Friday, and our driver will call you before he arrives.",q:"Choose the best words for the blank:",options:["will be delivered","delivers yesterday","delivering now is","delivered last week"],answer:0,explain:"Cam kết tương lai ở dạng bị động: will be delivered.",tags:["Grammar: Future_Simple","Grammar: Passive","Difficulty: Level_600","Part: Part6","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"The HR department ___ ten new staff this year.",options:["has recruited","recruit yesterday","recruits last year","recruiting"],answer:0,explain:"Tiến độ tính đến nay trong năm nay → has recruited.",tags:["Grammar: Present_Perfect","Vocab: HR","Difficulty: Level_600","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 7",passage:"Email: “Hi team, the client has not paid invoice 204 yet. It was due last Friday. Please remind them politely today.”",q:"What should the team do today?",options:["Send a new invoice.","Remind the client politely to pay.","Cancel the client's order.","Wait until next month."],answer:1,explain:"Email yêu cầu: nhắc khách thanh toán một cách lịch sự ngay hôm nay.",tags:["Vocab: Finance","Difficulty: Level_600","Part: Part7","Cognitive_Skill: Inference"]}],
+ speakRead:"Our company has already finished the new catalogue, and we will present it to clients at the trade fair next week.",
+ speakPrompt:"Talk about a project you have finished recently (about 45–60 seconds): say what it was, what you have done so far, and what you will do next.",
+ writePrompts:[
+  {prompt:"Write an email (60–80 words) to a client: tell them their shipment will arrive on Friday, apologise for a one-day delay, and offer a small discount.",min:60},
+  {prompt:"Write a short progress report (60–80 words) about your team's work this month: use the Present Perfect at least twice (e.g. “We have completed…”).",min:60}]},
+3:{ listen:[
+  {part:"Part 4",script:"The quarterly report was submitted to the board yesterday. It will be discussed at the meeting on Friday, and the final version must be approved before the end of the month.",q:"What must happen before the end of the month?",options:["The report must be written.","The final version must be approved.","The board must resign."],answer:1,explain:"“the final version must be approved before the end of the month”.",tags:["Grammar: Passive","Vocab: Workplace","Difficulty: Level_700","Part: Part4","Cognitive_Skill: Recognition"]},
+  {part:"Part 3",script:"— If the supplier lowers the price, we will sign the contract today. — Should they refuse, we will look for another supplier. — Agreed.",q:"What will happen if the supplier lowers the price?",options:["The contract will be cancelled.","They will sign the contract today.","They will look for another supplier first."],answer:1,explain:"Điều kiện Loại 1: “we will sign the contract today”.",tags:["Grammar: Conditionals","Vocab: Finance","Difficulty: Level_700","Part: Part3","Cognitive_Skill: Application"]},
+  {part:"Part 4",script:"Please note that all expense reports must be submitted within five working days. Reports sent after that period will not be accepted, prior approval from the finance manager being the only exception.",q:"When must expense reports be submitted?",options:["Within five working days.","Within five weeks.","At the end of the year."],answer:0,explain:"“within five working days” — trong vòng năm ngày làm việc.",tags:["Grammar: Linking_Words","Vocab: Finance","Difficulty: Level_700","Part: Part4","Cognitive_Skill: Recognition"]},
+  {part:"Part 3",script:"— The manager suggested that the meeting be moved to Monday. — Why? — Because the client who signed the contract is arriving that morning.",q:"Who is arriving on Monday morning?",options:["The manager.","The client who signed the contract.","A new employee."],answer:1,explain:"“the client who signed the contract is arriving”.",tags:["Grammar: Subjunctive","Grammar: Relative_Clauses","Difficulty: Level_700","Part: Part3","Cognitive_Skill: Inference"]},
+  {part:"Part 4",script:"Despite the heavy rain throughout the morning, all the goods were delivered on time. The warehouse team worked efficiently, and no packages were damaged.",q:"What happened to the goods?",options:["They were damaged by rain.","They were delivered on time.","They arrived one day late."],answer:1,explain:"“all the goods were delivered on time” — mặc dù mưa suốt buổi sáng.",tags:["Grammar: Linking_Words","Grammar: Passive","Difficulty: Level_700","Part: Part4","Cognitive_Skill: Inference"]}],
+ read:[
+  {part:"Part 5",q:"The damaged packages ___ to the supplier last week.",options:["returned","were returned","returns","returning"],answer:1,explain:"“packages” chịu tác động + quá khứ → were returned.",tags:["Grammar: Passive","Difficulty: Level_700","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"Employees ___ overtime must inform their manager in advance.",options:["working","works","worked yesterday","work last week"],answer:0,explain:"Rút gọn mệnh đề quan hệ chủ động: employees working overtime (= who work).",tags:["Grammar: Relative_Clauses","Difficulty: Level_700","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"The director demanded that the report ___ before noon.",options:["is finished","be finished","was finished yesterday","finishes"],answer:1,explain:"Sau demanded that + S + bị động giả định → be finished.",tags:["Grammar: Subjunctive","Grammar: Passive","Difficulty: Level_700","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 6",passage:"Both the marketing team ___ the sales team attended the workshop, which was held adjacent to the main office.",q:"Choose the best word for the blank:",options:["and","or","nor","but only"],answer:0,explain:"Liên từ tương quan: both…and.",tags:["Grammar: Linking_Words","Difficulty: Level_700","Part: Part6","Cognitive_Skill: Application"]},
+  {part:"Part 7",passage:"CONTRACT NOTE: “Payment is due within 30 days of the invoice date. If payment is late, a fee of 2% per month will be added. Neither party may change these terms without written agreement.”",q:"What happens if payment is late?",options:["The contract ends immediately.","A fee of 2% per month will be added.","The invoice is cancelled.","Nothing happens."],answer:1,explain:"Điều khoản ghi rõ: trễ thanh toán sẽ cộng phí 2% mỗi tháng.",tags:["Grammar: Linking_Words","Grammar: Conditionals","Vocab: Finance","Difficulty: Level_700","Part: Part7","Cognitive_Skill: Inference"]}],
+ speakRead:"The goods, which were shipped last week, have already been delivered to the warehouse adjacent to the port.",
+ speakPrompt:"Express your opinion (about 60 seconds): “Should companies allow staff to work from home three days a week?” Give two reasons and use at least one conditional sentence (If…).",
+ writePrompts:[
+  {prompt:"Write an email (80–100 words) to a supplier: negotiate the price of a large order. Use a Type 1 conditional (e.g. “If you reduce the price by 10%, we will…”).",min:80},
+  {prompt:"Write a short report paragraph (80–100 words) about last month's deliveries. Use the passive voice at least twice (e.g. “The goods were delivered…”).",min:80}]},
+4:{ listen:[
+  {part:"Part 4",script:"Despite a challenging quarter, sales consequently recovered in the final month. Not only did the company meet its target, but it also expanded into two new markets, neither of which had been planned at the start of the year.",q:"What can be inferred about the company's year?",options:["Sales fell all year.","The company did better than its original plan in some ways.","The company closed two markets."],answer:1,explain:"Vượt mục tiêu và mở thêm hai thị trường ngoài kế hoạch → tốt hơn kế hoạch ban đầu ở một số mặt.",tags:["Grammar: Linking_Words","Difficulty: Level_900","Part: Part4","Cognitive_Skill: Inference"]},
+  {part:"Part 3",script:"— Should the market drop sharply, we will adjust the strategy. — The board also insisted that the budget be reviewed weekly. — Then let us prepare both scenarios.",q:"What did the board insist on?",options:["That the strategy be sold.","That the budget be reviewed weekly.","That the market drop."],answer:1,explain:"“insisted that the budget be reviewed weekly” — thức giả định.",tags:["Grammar: Subjunctive","Grammar: Conditionals","Difficulty: Level_900","Part: Part3","Cognitive_Skill: Inference"]},
+  {part:"Part 4",script:"Throughout the negotiation, both sides remained flexible. The final agreement, which was signed prior to the deadline, is expected to be announced tomorrow morning.",q:"When was the agreement signed?",options:["After the deadline.","Prior to the deadline.","Tomorrow morning."],answer:1,explain:"“was signed prior to the deadline” — ký trước hạn chót; ngày mai chỉ là lúc công bố.",tags:["Grammar: Linking_Words","Grammar: Relative_Clauses","Difficulty: Level_900","Part: Part4","Cognitive_Skill: Inference"]},
+  {part:"Part 3",script:"— The figures indicate that online sales have grown for six consecutive months. — Whereas store sales stayed flat. — So we will invest more in the website.",q:"Why will they invest more in the website?",options:["Because store sales grew faster.","Because online sales have grown steadily.","Because the website is broken."],answer:1,explain:"Doanh số online tăng sáu tháng liên tiếp → đầu tư thêm vào website.",tags:["Grammar: Present_Perfect","Difficulty: Level_900","Part: Part3","Cognitive_Skill: Inference"]},
+  {part:"Part 4",script:"All applications must be submitted online. Incomplete applications will neither be reviewed nor returned, so candidates should check every document carefully before the deadline.",q:"What will happen to incomplete applications?",options:["They will be reviewed slowly.","They will be returned to candidates.","They will neither be reviewed nor returned."],answer:2,explain:"“will neither be reviewed nor returned” — liên từ tương quan neither…nor ở dạng bị động.",tags:["Grammar: Linking_Words","Grammar: Passive","Difficulty: Level_900","Part: Part4","Cognitive_Skill: Inference"]}],
+ read:[
+  {part:"Part 5",q:"Not only ___ the deadline, but the team also cut costs by ten percent.",options:["the team met","did the team meet","the team meets yesterday","met the team"],answer:1,explain:"Đảo ngữ sau Not only ở thì quá khứ: did the team meet.",tags:["Grammar: Linking_Words","Difficulty: Level_900","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"The proposal ___ by the committee before it was sent to the director.",options:["reviewed","had been reviewed","reviews","reviewing committee"],answer:1,explain:"Bị động quá khứ hoàn thành: việc rà soát xảy ra trước việc gửi → had been reviewed.",tags:["Grammar: Passive","Grammar: Past_Perfect","Difficulty: Level_900","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 6",passage:"The training session will be held ___ the main conference, so participants should arrive thirty minutes early to register.",q:"Choose the best words for the blank:",options:["prior to","within desk","despite car","so that"],answer:0,explain:"“trước buổi hội nghị chính” → prior to.",tags:["Grammar: Linking_Words","Difficulty: Level_900","Part: Part6","Cognitive_Skill: Application"]},
+  {part:"Part 5",q:"The regulation requires that every transaction ___ recorded in the system.",options:["is","be","was yesterday","are"],answer:1,explain:"Sau requires that + S → thức giả định: be.",tags:["Grammar: Subjunctive","Difficulty: Level_900","Part: Part5","Cognitive_Skill: Application"]},
+  {part:"Part 7",passage:"Article extract (original sample): “Hybrid work has changed how offices are used. Whereas some firms have reduced their office space, others have kept large headquarters but redesigned them for teamwork. The evidence so far suggests that flexibility, rather than location, is what most employees value.”",q:"What does the article suggest most employees value most?",options:["Large headquarters.","Flexibility.","Fixed office locations.","Teamwork rooms only."],answer:1,explain:"Câu cuối: “flexibility, rather than location, is what most employees value.”",tags:["Grammar: Linking_Words","Vocab: Workplace","Difficulty: Level_900","Part: Part7","Cognitive_Skill: Inference"]}],
+ speakRead:"Not only has the company achieved its annual target, but it has also maintained the quality that its clients trust.",
+ speakPrompt:"Give a one-minute opinion: “Is a high TOEIC score enough to succeed at work?” Use at least one linking phrase (nevertheless, consequently, whereas…) and one conditional sentence.",
+ writePrompts:[
+  {prompt:"Write a formal email (100–120 words) to a business partner: propose new contract terms, use one inverted conditional (Should you…) and one subjunctive (We suggest that…be…).",min:100},
+  {prompt:"Write an opinion paragraph (110–130 words): “Companies should invest more in staff training.” Use nevertheless, both…and, and one passive sentence.",min:110}]}
+};
+let assessState = null;
+function startToeicAssess(stage){
+  const A=TOEIC_ASSESS[stage]; if(!A) return;
+  if(!toeicStageUnlocked(stage)){ toast("Giai đoạn này đang khóa."); return; }
+  assessState={stage:stage, answers:{}, readings:{}, self:{}, texts:{}, graded:false, result:null};
+  show("toeicpath");
+  const st=TOEIC_STAGES[stage-1];
+  appEl.innerHTML = `<button class="btn-sm" id="aBack">← Lộ trình TOEIC</button>
+  <div class="card"><div class="rowflex"><span class="pill blue">Assessment Test — Giai đoạn ${stage}: ${st.range} ${st.name}</span><span class="pill gold">100 điểm</span></div>
+  <p class="small muted">Mô phỏng format thi thật rút gọn: Nghe 25 (Part 1–4, dùng giọng đọc thật của trình duyệt) · Đọc 25 (Part 5–7) · Nói 25 (dạng TOEIC Speaking) · Viết 25 (dạng TOEIC Writing, chấm rubric ước tính). Đạt khi tổng ≥ 70/100 và mỗi kỹ năng ≥ 12,5/25. Thi lại không giới hạn. <strong>Điểm là ước tính tham khảo, không phải điểm chính thức của ETS.</strong></p>
+  <div id="assessBody"></div></div>`;
+  document.getElementById("aBack").addEventListener("click",()=>renderToeicPath());
+  drawToeicAssess();
+  window.scrollTo({top:0});
+}
+function drawToeicAssess(){
+  const s=assessState, A=TOEIC_ASSESS[s.stage], box=document.getElementById("assessBody"); if(!box) return;
+  const qBlock=(kind,arr)=>arr.map((e,i)=>{ const ans=s.answers[kind+i]; let body="";
+    if(kind==="listen"){ body=`<div class="rowflex"><button class="btn-sm btn-primary" data-alisten="${i}">🔊 Nghe (TTS)</button><span class="pill blue">${esc(e.part)}</span></div>
+     ${s.graded||!ttsOK()?`<div class="explain"><strong>Transcript:</strong> <span class="en">${esc(e.script)}</span></div>`:(ttsOK()?"":'<div class="notice red small">Trình duyệt không hỗ trợ giọng đọc — hãy đọc transcript: <span class="en">'+esc(e.script)+'</span></div>')}`; }
+    else if(e.passage){ body=`<div class="explain"><span class="pill blue">${esc(e.part)}</span> <span class="en">${esc(e.passage)}</span></div>`; }
+    else body=`<span class="pill blue">${esc(e.part)}</span>`;
+    return `<div style="margin:12px 0">${body}<p><span class="en">${esc(e.q)}</span></p>${e.options.map((o,oi)=>{ let cls="opt"; if(s.graded){ if(oi===e.answer) cls+=" right"; else if(ans===oi) cls+=" wrong"; } else if(ans===oi) cls+=" sel";
+      return `<button class="${cls}" data-aopt="${kind}:${i}:${oi}" ${s.graded?"disabled":""}>${String.fromCharCode(65+oi)}. ${esc(o)}</button>`; }).join("")}
+    ${s.graded?`<div class="explain">${ans===e.answer?"✓ Đúng (+5 điểm).":"✗ Chưa đúng. "}${esc(e.explain)}</div>`:""}</div>`; }).join("");
+  const selfSel=(key,label)=>`<label>${label}</label><select data-aself="${key}" style="max-width:460px" ${s.graded?"disabled":""}>
+    <option value="" ${s.self[key]==null||s.self[key]===""?"selected":""}>— chọn mức tự đánh giá —</option>
+    <option value="0" ${s.self[key]==="0"?"selected":""}>Chưa làm được / chưa ghi âm</option>
+    <option value="0.5" ${s.self[key]==="0.5"?"selected":""}>Làm được một phần, ngắt quãng nhiều</option>
+    <option value="0.8" ${s.self[key]==="0.8"?"selected":""}>Làm được phần lớn, tương đối rõ ràng</option>
+    <option value="1" ${s.self[key]==="1"?"selected":""}>Làm hết, rõ ràng và trôi chảy</option></select>`;
+  box.innerHTML = `
+  <h3>🎧 Listening — Nghe (25 điểm)</h3>${qBlock("listen",A.listen)}
+  <h3>📖 Reading — Đọc (25 điểm)</h3>${qBlock("read",A.read)}
+  <h3>🎙️ Speaking — Nói (25 điểm, ước tính tham khảo)</h3>
+  <div class="explain"><strong>Read aloud:</strong> <span class="en">${esc(A.speakRead)}</span> <button class="btn-sm" id="aModel">🔊 Nghe mẫu (TTS)</button></div>
+  <p class="small muted">Hãy đọc to đoạn trên (có thể ghi âm bằng ứng dụng của máy để tự nghe lại), rồi tự đánh giá trung thực. Điểm Nói trong hệ thống là <strong>ước tính tham khảo</strong>, không phải điểm thi chính thức.</p>
+  ${selfSel("read","Tự đánh giá phần Đọc to:")}
+  <p style="margin-top:10px"><strong>Respond / Express an opinion:</strong> ${esc(A.speakPrompt)}</p>
+  ${selfSel("resp","Tự đánh giá phần Trả lời / Trình bày:")}
+  <h3 style="margin-top:16px">✍️ Writing — Viết (25 điểm, chấm rubric ước tính)</h3>
+  ${A.writePrompts.map((w,i)=>`<div style="margin:12px 0"><p><span class="en">${esc(w.prompt)}</span></p><textarea data-awrite="${i}" rows="5" placeholder="Write your answer in English here…" ${s.graded?"disabled":""}>${esc(s.texts[i]||"")}</textarea><p class="small muted">Số từ: <span id="awc${i}">${s.texts[i]? s.texts[i].trim().split(/\s+/).filter(Boolean).length : 0}</span> · tối thiểu khoảng ${w.min} từ</p></div>`).join("")}
+  ${s.graded? `<div class="notice ${s.result.passed?"blue":"red"}"><h3>Kết quả Assessment Giai đoạn ${s.stage}: ${s.result.total}/100 ${s.result.passed?"— ĐẠT ✓":"— CHƯA ĐẠT"}</h3>
+    <p>Nghe: <strong>${s.result.scores.listening}/25</strong> · Đọc: <strong>${s.result.scores.reading}/25</strong> · Nói: <strong>${s.result.scores.speaking}/25</strong> (ước tính) · Viết: <strong>${s.result.scores.writing}/25</strong> (ước tính)</p>
+    <p class="small">${s.result.passed? "Bạn đã mở khóa giai đoạn tiếp theo trong Lộ trình TOEIC 0-900+. " : "Điều kiện đạt: tổng ≥ 70 và mỗi kỹ năng ≥ 12,5/25. Hãy ôn các tag yếu ở mục “Lỗ hổng của bạn” rồi thi lại — không giới hạn số lần."}Điểm này là <strong>ước tính tham khảo</strong> của hệ thống, không phải điểm thi chính thức của ETS.</p></div>
+    <div class="rowflex"><button class="btn-sm" id="aRetry">Thi lại Assessment ${s.stage}</button><button class="btn-sm btn-primary" id="aPath">Về Lộ trình TOEIC</button></div>`
+  : `<button class="btn-primary" id="aGrade">Nộp bài & chấm điểm</button>`}`;
+  box.querySelectorAll("[data-alisten]").forEach(b=>b.addEventListener("click",()=>{ const e=A.listen[+b.dataset.alisten]; speak(e.script,0.95); }));
+  box.querySelectorAll("[data-aopt]").forEach(b=>b.addEventListener("click",()=>{ const [k,i,oi]=b.dataset.aopt.split(":"); s.answers[k+(+i)]=+oi; drawToeicAssess(); }));
+  box.querySelectorAll("[data-aself]").forEach(sel=>sel.addEventListener("change",()=>{ s.self[sel.dataset.aself]=sel.value; }));
+  box.querySelectorAll("[data-awrite]").forEach(ta=>ta.addEventListener("input",()=>{ const i=+ta.dataset.awrite; s.texts[i]=ta.value; const el=document.getElementById("awc"+i); if(el) el.textContent=ta.value.trim()? ta.value.trim().split(/\s+/).filter(Boolean).length : 0; }));
+  const mdl=document.getElementById("aModel"); if(mdl) mdl.addEventListener("click",()=>speak(A.speakRead,0.92));
+  const gr=document.getElementById("aGrade");
+  if(gr) gr.addEventListener("click",()=>{
+    const missing=[];
+    A.listen.forEach((e,i)=>{ if(s.answers["listen"+i]==null) missing.push("Nghe câu "+(i+1)); });
+    A.read.forEach((e,i)=>{ if(s.answers["read"+i]==null) missing.push("Đọc câu "+(i+1)); });
+    if(s.self.read==null||s.self.read===""||s.self.resp==null||s.self.resp==="") missing.push("tự đánh giá phần Nói");
+    A.writePrompts.forEach((w,i)=>{ const wc=s.texts[i]? s.texts[i].trim().split(/\s+/).filter(Boolean).length : 0; if(wc<10) missing.push("bài Viết "+(i+1)); });
+    if(missing.length){ toast("Hãy hoàn thành tất cả các phần trước khi nộp. Còn thiếu: "+missing.join(", ")); return; }
+    let L=0,R=0;
+    A.listen.forEach((e,i)=>{ const ok=s.answers["listen"+i]===e.answer; if(ok) L+=5; recordTags(e, ok?1:0); });
+    A.read.forEach((e,i)=>{ const ok=s.answers["read"+i]===e.answer; if(ok) R+=5; recordTags(e, ok?1:0); });
+    const S=Math.round(((parseFloat(s.self.read)+parseFloat(s.self.resp))/2)*25*10)/10;
+    let W=0; A.writePrompts.forEach((w,i)=>{ const a=analyzeWriting(String(s.texts[i]||""), w.min); let sc=a.avg/10*12.5; const wc=s.texts[i].trim().split(/\s+/).filter(Boolean).length; if(wc<w.min*0.5) sc=Math.min(sc,5); W+=sc; });
+    W=Math.round(W*10)/10;
+    const total=Math.round((L+R+S+W)*10)/10;
+    const passed = total>=70 && L>=12.5 && R>=12.5 && S>=12.5 && W>=12.5;
+    s.result={total:total, scores:{listening:L,reading:R,speaking:S,writing:W}, passed:passed}; s.graded=true;
+    const p=myProg(); if(!p.toeicAssess) p.toeicAssess={};
+    const prev=p.toeicAssess[s.stage];
+    p.toeicAssess[s.stage]={ best: Math.max(prev? prev.best:0, total), attempts:(prev? prev.attempts:0)+1, passed: !!(prev&&prev.passed)||passed, last:{total:total, scores:s.result.scores, date:todayStr()} };
+    addStudy(15); addXP(passed?50:20); saveDB();
+    drawToeicAssess(); window.scrollTo({top:0});
+  });
+  const rt=document.getElementById("aRetry"); if(rt) rt.addEventListener("click",()=>startToeicAssess(s.stage));
+  const bp=document.getElementById("aPath"); if(bp) bp.addEventListener("click",()=>renderToeicPath());
+}
+
+/* ================= ÔN TẬP THEO TAG YẾU NHẤT (SPACED REPETITION) ================= */
+let reviewState = null;
+function startTagReview(){
+  const info=tagWeakStrong();
+  if(!info){ toast("Chưa có tag nào đủ 5 lượt làm để xác định lỗ hổng. Hãy học thêm bài TOEIC trước nhé."); return; }
+  const weak=info.weak.tag;
+  const pool=[]; const seenQ={};
+  TOEIC_LESSONS.filter(l=>!l.special).forEach(l=>{
+    getToeicExercises(l).forEach(e=>{
+      if(e.tags && e.tags.includes(weak) && ["mcq","meaning","truefalse","fill"].includes(e.type) && !seenQ[e.q]){ seenQ[e.q]=1; pool.push(Object.assign({}, e, {lessonTitle:l.title})); }
+    });
+  });
+  if(!pool.length){ toast("Chưa trích xuất được bài tập cho tag này."); return; }
+  reviewState={tag:weak, queue:seededShuffle(pool, "review-"+weak+"-"+Date.now()), cur:0, attempts:0, firstRight:0, answered:null, sel:null, total0:pool.length};
+  show("toeicpath");
+  drawTagReview();
+}
+function drawTagReview(){
+  const r=reviewState; if(!r) return;
+  if(!r.queue.length){
+    appEl.innerHTML = `<div class="card"><h2>🎉 Hoàn thành bộ ôn tập!</h2>
+    <p>Tag đã ôn: <strong>${esc(r.tag)}</strong> (${esc(tagLabel(r.tag))}) · Tổng lượt làm trong bộ: ${r.attempts} · Trả lời đúng ngay lần đầu: ${r.firstRight}/${r.total0} câu.</p>
+    <p class="small muted">Câu làm sai đã được đưa lại vào cuối bộ theo kiểu Spaced Repetition (không lặp ngay câu vừa làm) cho đến khi bạn trả lời đúng. Kết quả từng câu cũng đã được ghi vào thống kê tag.</p>
+    <div class="rowflex"><button class="btn-primary" data-goto="dashboard">Về Tổng quan</button><button id="rvAgain">Ôn lại bộ này</button><button id="rvPath">Về Lộ trình TOEIC</button></div></div>`;
+    bindNavHelpers();
+    document.getElementById("rvAgain").addEventListener("click", startTagReview);
+    document.getElementById("rvPath").addEventListener("click", renderToeicPath);
+    window.scrollTo({top:0}); return;
+  }
+  const e=r.queue[0];
+  appEl.innerHTML = `<button class="btn-sm" id="rvBack">← Về Tổng quan</button>
+  <div class="card"><div class="rowflex"><span class="pill blue">Ôn tập theo tag yếu nhất</span><span class="pill gold">${esc(r.tag)}</span><span class="spacer"></span><span class="small muted">Còn ${r.queue.length} câu trong bộ · từ bài: ${esc(e.lessonTitle||"")}</span></div>
+  <p style="margin-top:10px"><span class="pill blue">${EX_TYPE_LABELS[e.type]||e.type}</span></p>
+  <p><span class="en" style="font-size:1.05rem">${esc(e.q)}</span></p>
+  <div id="rvBody"></div><div id="rvFb"></div></div>`;
+  document.getElementById("rvBack").addEventListener("click",()=>show("dashboard"));
+  const body=document.getElementById("rvBody");
+  if(e.type==="mcq"||e.type==="meaning"){
+    body.innerHTML = e.options.map((o,oi)=>`<button class="opt ${r.sel===oi?"sel":""}" data-rvopt="${oi}" ${r.answered!=null?"disabled":""}>${String.fromCharCode(65+oi)}. ${esc(o)}</button>`).join("") + (r.answered==null? `<button class="btn-primary" id="rvCheck" style="margin-top:8px">Kiểm tra</button>`:"");
+    body.querySelectorAll("[data-rvopt]").forEach(b=>b.addEventListener("click",()=>{ r.sel=+b.dataset.rvopt; drawTagReview(); }));
+  } else if(e.type==="truefalse"){
+    body.innerHTML = [true,false].map(v=>`<button class="opt" style="display:inline-block;width:auto;margin-right:8px" data-rvtf="${v?1:0}" ${r.answered!=null?"disabled":""}>${v?"Đúng (True)":"Sai (False)"}</button>`).join("");
+    body.querySelectorAll("[data-rvtf]").forEach(b=>b.addEventListener("click",()=>{ r.sel=(b.dataset.rvtf==="1"); checkReview(); }));
+  } else if(e.type==="fill"){
+    body.innerHTML = `<input id="rvFill" placeholder="Nhập từ còn thiếu…" style="max-width:340px" ${r.answered!=null?"disabled":""}> <button class="btn-primary" id="rvCheck">Kiểm tra</button>`;
+  }
+  const chk=document.getElementById("rvCheck");
+  if(chk) chk.addEventListener("click", checkReview);
+  if(r.answered!=null){
+    const fb=document.getElementById("rvFb");
+    fb.innerHTML = `<div class="explain">${r.answered? "✓ Đúng! Câu này sẽ rời khỏi bộ ôn tập." : "✗ Chưa đúng. Câu này sẽ xuất hiện lại sau trong bộ ôn tập (Spaced Repetition), không lặp ngay lập tức."} ${esc(e.explain||"")}</div>
+    <button class="btn-primary" id="rvNext">Câu tiếp theo →</button>`;
+    document.getElementById("rvNext").addEventListener("click",()=>{
+      const cur=r.queue.shift();
+      if(!r.answered){ const pos=Math.min(r.queue.length, 3); r.queue.splice(pos,0,cur); }
+      r.sel=null; r.answered=null; drawTagReview();
+    });
+  }
+  function checkReview(){
+    let ok=false;
+    if(e.type==="fill"){ const inp=document.getElementById("rvFill"); const norm=s=>String(s||"").trim().toLowerCase().replace(/[.!?,;:]$/,""); ok = inp && norm(inp.value)===norm(e.answer); }
+    else ok = r.sel===e.answer;
+    if(r.sel==null && e.type!=="fill"){ toast("Hãy chọn một đáp án trước."); return; }
+    r.answered=ok; r.attempts++; if(ok && !e._seenWrong) r.firstRight++;
+    if(!ok) e._seenWrong=true;
+    recordTags(e, ok?1:0);
+    drawTagReview();
+  }
+  window.scrollTo({top:0});
+}
+
 /* ================= KHỞI TẠO =================
    Việc vào app được quyết định ở khối script Supabase cuối file:
    còn phiên Supabase → vào thẳng Dashboard; chưa có phiên → hiện form đăng nhập. */
@@ -2649,8 +3349,10 @@ try{
   }
 }catch(e){ sbClient = null; }
 
-/* Chưa dán key (hoặc không tải được thư viện) → báo rõ ngay trên form đăng nhập. */
-if(!sbClient){
+/* Chỉ hiện cảnh báo “Chưa dán Publishable key” khi key THẬT SỰ còn thiếu/placeholder.
+   Key đã được gắn sẵn trong file này; nếu thư viện Supabase không tải được do mạng
+   thì không hiện cảnh báo thiếu key (lỗi mạng sẽ được báo riêng khi bấm đăng nhập). */
+if(!sbClient && sbKeyMissing()){
   const warn=document.getElementById("sbKeyWarning");
   if(warn) warn.classList.remove("hidden");
 }
